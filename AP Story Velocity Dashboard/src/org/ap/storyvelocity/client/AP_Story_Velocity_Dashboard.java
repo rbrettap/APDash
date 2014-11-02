@@ -1,0 +1,318 @@
+package org.ap.storyvelocity.client;
+
+import org.ap.storyvelocity.shared.FieldVerifier;
+
+import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.KeyCodes;
+import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.VerticalPanel;
+import com.google.gwt.user.client.ui.FlexTable;
+import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.event.dom.client.KeyPressHandler;
+import com.google.gwt.event.dom.client.KeyPressEvent;
+
+import java.util.ArrayList;
+
+import com.google.gwt.user.client.Timer;
+import com.google.gwt.user.client.Random;
+import com.google.gwt.i18n.client.DateTimeFormat;
+import com.google.gwt.i18n.client.NumberFormat;
+
+import java.util.Date;
+
+import com.google.gwt.user.client.ui.Image;
+
+
+
+/**
+ * Entry point classes define <code>onModuleLoad()</code>.
+ */
+public class AP_Story_Velocity_Dashboard implements EntryPoint {
+	/**
+	 * Entry point classes define <code>onModuleLoad()</code>.
+	 */
+		private VerticalPanel mainPanel;
+		private FlexTable storyFlexTable;
+		private HorizontalPanel addPanel;
+		private TextBox newSymbolTextBox;
+		private Button addButton;
+		private Label lastUpdatedLabel;
+		private ArrayList <String> stories = new ArrayList<String>();  
+		private static final int REFRESH_INTERVAL = 5000;
+		private Image image;
+		private Label lblStoryWatcher;
+		
+		public void onModuleLoad() {
+			RootPanel rootPanel = RootPanel.get();
+			{
+				mainPanel = new VerticalPanel();
+				rootPanel.add(mainPanel, 5, 5);
+				mainPanel.setSize("440px", "290px");
+				{
+					image = new Image("aplogo.png");
+					mainPanel.add(image);
+				}
+				{
+					lblStoryWatcher = new Label("Story Velocity Dashboard");
+					lblStoryWatcher.setStyleName("gwt-Label-StockWatcher");
+					
+					mainPanel.add(lblStoryWatcher);
+				}
+				{
+					storyFlexTable = new FlexTable();
+					//Add these lines
+					storyFlexTable.setText(0, 0, "Story");
+					storyFlexTable.setText(0, 1, "Publish_Date");
+					storyFlexTable.setText(0, 2, "TimeInApp");
+					storyFlexTable.setText(0, 3, "Total PageViews");
+					storyFlexTable.setText(0, 4, "Velocity");
+					storyFlexTable.setText(0, 5, "PVs_Last_15_mins");
+					storyFlexTable.setText(0, 6, "Trend");
+					storyFlexTable.setText(0, 7, "Active");
+					
+					// Add styles to elements in the stock list table.
+					storyFlexTable.setCellPadding(6);
+				    storyFlexTable.getRowFormatter().addStyleName(0, "watchListHeader");
+				    storyFlexTable.addStyleName("watchList");
+				    storyFlexTable.getCellFormatter().addStyleName(0, 1, "watchListNumericColumn");
+				    storyFlexTable.getCellFormatter().addStyleName(0, 2, "watchListNumericColumn");
+				    storyFlexTable.getCellFormatter().addStyleName(0, 3, "watchListNumericColumn");
+				    storyFlexTable.getCellFormatter().addStyleName(0, 4, "watchListNumericColumn");
+				    storyFlexTable.getCellFormatter().addStyleName(0, 5, "watchListNumericColumn");
+				    storyFlexTable.getCellFormatter().addStyleName(0, 6, "watchListNumericColumn");
+				    storyFlexTable.getCellFormatter().addStyleName(0, 7, "watchListRemoveColumn");
+				    
+					mainPanel.add(storyFlexTable);
+				}
+				{
+					addPanel = new HorizontalPanel();
+					addPanel.addStyleName("addPanel");
+					mainPanel.add(addPanel);
+					{
+						newSymbolTextBox = new TextBox();
+						newSymbolTextBox.addKeyPressHandler(new KeyPressHandler() {
+							public void onKeyPress(KeyPressEvent event) {
+								if (event.getCharCode() == KeyCodes.KEY_ENTER){
+									addStoryName();
+								}
+							}
+						});
+						newSymbolTextBox.setFocus(true);
+						addPanel.add(newSymbolTextBox);
+					}
+					{
+						addButton = new Button("New button");
+						addButton.setStyleName("gwt-Button-Add");
+						addButton.addClickHandler(new ClickHandler() {
+							public void onClick(ClickEvent event) {
+								addStoryName();
+							}
+						});
+						addButton.setText("Add");
+						addPanel.add(addButton);
+					}
+				}
+				{
+					lastUpdatedLabel = new Label("New label");
+					mainPanel.add(lastUpdatedLabel);
+				}
+			}
+			
+			// add default stories
+			addDefaultStories("STORY1");
+			addDefaultStories("STORY2");
+			addDefaultStories("STORY3");
+			addDefaultStories("STORY4");
+			addDefaultStories("STORY5");
+			addDefaultStories("STORY6");
+			addDefaultStories("STORY7");
+			addDefaultStories("STORY8");
+			addDefaultStories("STORY9");
+			addDefaultStories("STORY10");
+			
+			
+			// setup timer to refresh list automatically
+			Timer refreshTimer = new Timer() {
+				public void run()
+				{
+					refreshWatchList();
+				}
+			};
+			refreshTimer.scheduleRepeating(REFRESH_INTERVAL);
+
+			
+		}
+		private void refreshWatchList() {
+			final int MAX_PRICE = 100; // $100
+			final double MAX_PRICE_CHANGE = 0.02; // +/- 2%
+
+			StoryDetail[] pVes = new StoryDetail[stories.size()];
+			for (int i = 0; i < stories.size(); i++)
+			{
+				int pageViews = Random.nextInt(10000);
+				int velocity = Random.nextInt(10000);
+				String active = "YES";
+				Date today = new Date();
+				String timeInApp = "15 mins";
+				int trendfifteenmins = Random.nextInt(500);
+				
+				//double change = pageViews * MAX_PRICE_CHANGE
+				//		* (Random.nextDouble() * 2.0 - 1.0);
+
+				pVes[i] = new StoryDetail((String) stories.get(i), today, timeInApp, pageViews, velocity, trendfifteenmins, active);
+			}
+
+			updateTable(pVes);
+
+			
+		}
+		private void updateTable(StoryDetail[] pVes)
+		{
+			if (pVes == null)
+				return;
+			
+			for (int i = 0; i < pVes.length; i++)
+			{
+				updateTable(pVes[i]);
+			}
+
+			// change the last update timestamp
+			lastUpdatedLabel.setText("Last update : "
+					+ DateTimeFormat.getMediumDateTimeFormat().format(new Date()));
+		}
+
+		private void updateTable(StoryDetail storyPageView) {
+			// make sure the stock is still in our watch list
+			if (!stories.contains(storyPageView.getStoryId()))
+			{
+				return;
+			}
+
+			int row = stories.indexOf(storyPageView.getStoryId()) + 1;
+			
+			DateTimeFormat sdf = DateTimeFormat.getFormat("MMMM dd, yyyy HH:mm aa");
+			String pubDate = sdf.format(storyPageView.getPubDate());
+			
+			String timeInApp = storyPageView.getTimeInApp();
+			int velocity = storyPageView.getVelocity();
+			int trendfifteenmins = storyPageView.getTrendFifteenMins();
+			
+		    // Format the data in the Price and Change fields.
+		    String priceText = NumberFormat.getFormat("#,##0").format(storyPageView.getPageviews());
+		    NumberFormat changeFormat = NumberFormat.getFormat("+#,##0.00;-#,##0.00");
+		    //String changeText = changeFormat.format(storyPageView.getChange());
+		    //String changePercentText = changeFormat.format(storyPageView.getChangePercent());
+		    
+		    storyFlexTable.setText(row, 1, pubDate);
+		    storyFlexTable.setText(row, 2, timeInApp);
+		    
+
+		    // Populate the Price and Change fields with new data.
+		    storyFlexTable.setText(row, 3, priceText);
+		    storyFlexTable.setText(row, 4, velocity+"");
+		    storyFlexTable.setText(row, 5, trendfifteenmins+"");
+		    //Use the line of code without styling
+		    //stocksFlexTable.setText(row, 2, changeText + " (" + changePercentText + "%)");
+		    
+		    //Use this with styling
+		   // Label changeWidget = (Label)storyFlexTable.getWidget(row, 5);
+		   // changeWidget.setText(changeText + " (" + changePercentText + "%)");
+		    
+		 // Change the color of text in the Change field based on its value.
+		    String changeStyleName = "noChange";
+		    
+		    /*
+		    if (storyPageView.getChangePercent() < -0.1f) {
+		      changeStyleName = "negativeChange";
+		    }
+		    else if (storyPageView.getChangePercent() > 0.1f) {
+		      changeStyleName = "positiveChange";
+		    }
+		    */
+
+		    //changeWidget.setStyleName(changeStyleName);
+		}
+		private void addStoryName() {
+			final String symbol = newSymbolTextBox.getText().toUpperCase().trim();
+		    newSymbolTextBox.setFocus(true);
+
+		    // Stock code must be between 1 and 10 chars that are numbers, letters, or dots.
+		    if (!symbol.matches("^[0-9A-Z\\.]{1,10}$")) {
+		      Window.alert("'" + symbol + "' is not a valid story name.");
+		      newSymbolTextBox.selectAll();
+		      return;
+		    }
+
+		    newSymbolTextBox.setText("");
+
+		 // don't add the story if it's already in the watch list
+		    if (stories.contains(symbol))
+		        return;
+
+		    // add the stock to the list
+		    int row = storyFlexTable.getRowCount();
+		    stories.add(symbol);
+		    storyFlexTable.setText(row, 0, symbol);
+		    storyFlexTable.setWidget(row, 2, new Label());
+		    storyFlexTable.getCellFormatter().addStyleName(row, 1, "watchListNumericColumn");
+		    storyFlexTable.getCellFormatter().addStyleName(row, 2, "watchListNumericColumn");
+		    storyFlexTable.getCellFormatter().addStyleName(row, 3, "watchListNumericColumn");
+		    storyFlexTable.getCellFormatter().addStyleName(row, 4, "watchListNumericColumn");
+		    storyFlexTable.getCellFormatter().addStyleName(row, 5, "watchListNumericColumn");
+		    storyFlexTable.getCellFormatter().addStyleName(row, 6, "watchListNumericColumn");
+		    storyFlexTable.getCellFormatter().addStyleName(row, 7, "watchListRemoveColumn");
+		    
+		    // add button to remove this stock from the list
+		    Button removeStock = new Button("x");
+		    removeStock.addStyleDependentName("remove");
+		    removeStock.addClickHandler(new ClickHandler() {
+		    public void onClick(ClickEvent event) {					
+		        int removedIndex = stories.indexOf(symbol);
+		        stories.remove(removedIndex);
+		        storyFlexTable.removeRow(removedIndex + 1);
+		    }
+		    });
+		    storyFlexTable.setWidget(row, 7, removeStock);	
+			
+		}
+
+		
+		private void addDefaultStories(final String symbol) {
+
+		    // add the stock to the list
+		    int row = storyFlexTable.getRowCount();
+		    stories.add(symbol);
+		    storyFlexTable.setText(row, 0, symbol);
+		    storyFlexTable.setWidget(row, 2, new Label());
+		    storyFlexTable.getCellFormatter().addStyleName(row, 1, "watchListNumericColumn");
+		    storyFlexTable.getCellFormatter().addStyleName(row, 2, "watchListNumericColumn");
+		    storyFlexTable.getCellFormatter().addStyleName(row, 3, "watchListNumericColumn");
+		    storyFlexTable.getCellFormatter().addStyleName(row, 4, "watchListNumericColumn");
+		    storyFlexTable.getCellFormatter().addStyleName(row, 5, "watchListNumericColumn");
+		    storyFlexTable.getCellFormatter().addStyleName(row, 6, "watchListNumericColumn");
+		    storyFlexTable.getCellFormatter().addStyleName(row, 7, "watchListRemoveColumn");
+		    
+		    // add button to remove this stock from the list
+		    Button removeStock = new Button("x");
+		    removeStock.addStyleDependentName("remove");
+		    removeStock.addClickHandler(new ClickHandler() {
+		    public void onClick(ClickEvent event) {					
+		        int removedIndex = stories.indexOf(symbol);
+		        stories.remove(removedIndex);
+		        storyFlexTable.removeRow(removedIndex + 1);
+		    }
+		    });
+		    storyFlexTable.setWidget(row, 7, removeStock);	
+			
+		}
+		
+	}
+
+
+
