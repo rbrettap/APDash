@@ -1,12 +1,13 @@
 package org.ap.storyvelocity.client;
 
-import org.ap.storyvelocity.shared.FieldVerifier;
-
 import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
@@ -48,10 +49,50 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		private Image image;
 		private Label lblStoryWatcher;
 		
-		public void onModuleLoad() {
+	    private LoginInfo loginInfo = null;
+		private VerticalPanel loginPanel = new VerticalPanel();
+		private Label loginLabel = new Label(
+		      "Please sign in to your Google Account to access the AP Dashboard application.");
+	    private Anchor signInLink = new Anchor("Sign In");
+	    private Anchor signOutLink = new Anchor("Sign Out");
+	    private final StoryServiceAsync storyService = GWT.create(StoryService.class);
+	    
+	    public void onModuleLoad() {
+	        // Check login status using login service.
+	        LoginServiceAsync loginService = GWT.create(LoginService.class);
+	        loginService.login(GWT.getHostPageBaseURL(), new AsyncCallback<LoginInfo>() {
+	          public void onFailure(Throwable error) {
+	        	  loadLogin();
+	          }
+
+	          public void onSuccess(LoginInfo result) {
+	            loginInfo = result;
+	            if(loginInfo.isLoggedIn()) {
+	            	loadStoryWatcher();
+	            } else {
+	              loadLogin();
+	            }
+	          }
+	        });
+	    }
+		
+	    private void loadLogin() {
+	        // Assemble login panel.
+	        signInLink.setHref(loginInfo.getLoginUrl());
+	        loginPanel.add(loginLabel);
+	        loginPanel.add(signInLink);
+	        RootPanel.get().add(loginPanel);
+	    }
+	    
+	    
+		public void loadStoryWatcher() {
+			
+			signOutLink.setHref(loginInfo.getLogoutUrl());
+			
 			RootPanel rootPanel = RootPanel.get();
 			{
 				mainPanel = new VerticalPanel();
+				mainPanel.add(signOutLink);
 				rootPanel.add(mainPanel, 5, 5);
 				mainPanel.setSize("440px", "290px");
 				{
@@ -125,6 +166,9 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			}
 			
 			// add default stories
+			//addStoryToDatabase("STORY1");
+			addStory("Test");
+			
 			addDefaultStories("STORY1");
 			addDefaultStories("STORY2");
 			addDefaultStories("STORY3");
@@ -152,7 +196,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			final int MAX_PRICE = 100; // $100
 			final double MAX_PRICE_CHANGE = 0.02; // +/- 2%
 
-			StoryDetail[] pVes = new StoryDetail[stories.size()];
+			StoryDetailClient[] pVes = new StoryDetailClient[stories.size()];
 			for (int i = 0; i < stories.size(); i++)
 			{
 				int pageViews = Random.nextInt(10000);
@@ -165,14 +209,41 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 				//double change = pageViews * MAX_PRICE_CHANGE
 				//		* (Random.nextDouble() * 2.0 - 1.0);
 
-				pVes[i] = new StoryDetail((String) stories.get(i), today, timeInApp, pageViews, velocity, trendfifteenmins, active);
+				pVes[i] = new StoryDetailClient((String) stories.get(i), today, timeInApp, pageViews, velocity, trendfifteenmins, active);
 			}
 
 			updateTable(pVes);
 
 			
 		}
-		private void updateTable(StoryDetail[] pVes)
+		
+		private void addStory(final String storyId) {
+			    storyService.addStoryDetail(storyId, new AsyncCallback<Void>() {
+			      public void onFailure(Throwable error) {
+			      }
+			      public void onSuccess(Void ignore) {
+			        //displayStock(symbol);
+			      }
+			    });
+		}
+		  
+		  
+		
+		private void addStoryToDatabase(String storyName)
+		{
+			/*
+			   stockService.addStock(storyName, new AsyncCallback<Void>() {
+				      public void onFailure(Throwable error) {
+				      }
+				      public void onSuccess(Void ignore) {
+				        displayStock(storyName);
+				      }
+				});
+		   */
+		}
+		
+		
+		private void updateTable(StoryDetailClient[] pVes)
 		{
 			if (pVes == null)
 				return;
@@ -187,7 +258,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 					+ DateTimeFormat.getMediumDateTimeFormat().format(new Date()));
 		}
 
-		private void updateTable(StoryDetail storyPageView) {
+		private void updateTable(StoryDetailClient storyPageView) {
 			// make sure the stock is still in our watch list
 			if (!stories.contains(storyPageView.getStoryId()))
 			{

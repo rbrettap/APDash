@@ -2,7 +2,7 @@ package org.ap.storyvelocity.client;
 
 import java.util.Date;
 
-public class StoryDetail
+public class StoryDetailClient
 {
 	private String storyId;
 	private Date pubDate;
@@ -12,11 +12,11 @@ public class StoryDetail
 	private int trendfifteenmins;
 	private String active;
 
-	public StoryDetail()
+	public StoryDetailClient()
 	{
 	}
 
-	public StoryDetail(String storyId, Date pubDate, String timeInApp, int pageviews, int velocity, int trendfifteenmins, String active)
+	public StoryDetailClient(String storyId, Date pubDate, String timeInApp, int pageviews, int velocity, int trendfifteenmins, String active)
 	{
 		this.storyId = storyId;
 		this.pubDate = pubDate;
