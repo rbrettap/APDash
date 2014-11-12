@@ -167,7 +167,16 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			
 			// add default stories
 			//addStoryToDatabase("STORY1");
-			addStory("Test");
+			addStory("STORY1");
+			addStory("STORY2");
+			addStory("STORY3");
+			addStory("STORY4");
+			addStory("STORY5");
+			addStory("STORY6");
+			addStory("STORY7");
+			addStory("STORY8");
+			addStory("STORY9");
+			addStory("STORY10");
 			
 			addDefaultStories("STORY1");
 			addDefaultStories("STORY2");
@@ -185,7 +194,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			Timer refreshTimer = new Timer() {
 				public void run()
 				{
-					refreshWatchList();
+					//refreshWatchList();
 				}
 			};
 			refreshTimer.scheduleRepeating(REFRESH_INTERVAL);

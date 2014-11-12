@@ -16,6 +16,7 @@ import javax.jdo.annotations.Order;
 import javax.jdo.annotations.Persistent;
 
 import com.google.appengine.api.datastore.Key;
+import com.google.appengine.datanucleus.annotations.Unowned;
 
 
 @PersistenceCapable(identityType = IdentityType.APPLICATION, detachable="true")
@@ -38,8 +39,9 @@ public class StoryDetail
 	@Persistent
 	private String active;
 	
-	@Persistent(mappedBy = "storyDetail")
-	@Element(dependent = "true")
+	@Persistent
+	@Unowned
+	//@Element(dependent = "true")
 	//@Order(extensions = @Extension(vendorName="datanucleus",key="list-ordering", value="pageViewDate desc"))
 	private List<PageView> pageViewSets = new ArrayList<PageView>();
 

@@ -1,8 +1,9 @@
 package org.ap.storyvelocity.client;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class StoryDetailClient
+public class StoryDetailClient implements Serializable
 {
 	private String storyId;
 	private Date pubDate;
@@ -11,6 +12,8 @@ public class StoryDetailClient
 	private int velocity; 
 	private int trendfifteenmins;
 	private String active;
+	
+	private static final long serialVersionUID = 1L;
 
 	public StoryDetailClient()
 	{
