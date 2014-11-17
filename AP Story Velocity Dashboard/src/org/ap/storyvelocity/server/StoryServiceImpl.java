@@ -15,8 +15,9 @@ import java.util.logging.Logger;
 
 import javax.jdo.JDOHelper;
 import javax.jdo.PersistenceManager;
-import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Query;
+
+import org.ap.storyvelocity.server.PMF;
 
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
@@ -40,18 +41,18 @@ public class StoryServiceImpl extends RemoteServiceServlet implements
 StoryService {
 	
 	private static final Logger LOG = Logger.getLogger(StoryServiceImpl.class.getName());
-	private static final PersistenceManagerFactory PMF =
-	      JDOHelper.getPersistenceManagerFactory("transactions-optional");
 	
 	@Override
 	public void addStoryDetail(String storyId) throws NotLoggedInException {
 		checkLoggedIn();
-		PersistenceManager pm = getPersistenceManager();
-		pm.currentTransaction().begin();
+		 
+		PersistenceManager pm = PMF.get().getPersistenceManager();
+	     javax.jdo.Transaction tx = pm.currentTransaction();
 		
 		try {
 
-			Key key = KeyFactory.createKey(PageView.class.getSimpleName(), storyId);
+			Key key = KeyFactory.createKey(StoryDetail.class.getSimpleName(), storyId);
+			Key key2 = KeyFactory.createKey(PageView.class.getSimpleName(), storyId);
 			
 			int pageViews = 100;
 			int pageViews1 = 150;
@@ -72,37 +73,47 @@ StoryService {
 
 	        PageView pv = new PageView(yesterday, pageViews);
 			PageView pv1 = new PageView(today, pageViews1);
-			e.getPageViewSets().add(pv);
-			e.getPageViewSets().add(pv1);
+			e.setKey(key);
+			List pageViewSets = new ArrayList();
+			pageViewSets.add(pv);
+			pageViewSets.add(pv1);
+			e.pageViewSets = pageViewSets;
 			
-			pv.setKey(key);
-			pv1.setKey(key);
 			
+			tx.begin();
 		    pm.makePersistent(e);
-		    pm.currentTransaction().commit();
+		    tx.commit();
 		    
 		} finally {
-			if (pm.currentTransaction().isActive()) {
-		        pm.currentTransaction().rollback();
+			if (tx.isActive()) {
+				tx.rollback();
 		    }
+			pm.close();
 		}
 	}
 	
 	@Override
 	public void addStory(String storyId) throws NotLoggedInException {
 		checkLoggedIn();
-		PersistenceManager pm = getPersistenceManager();
+		PersistenceManager pm = PMF.get().getPersistenceManager();
+		 javax.jdo.Transaction tx = pm.currentTransaction();
 		try {
+			tx.begin();	
 		  pm.makePersistent(new Story(getUser(), storyId));
+		  tx.commit();
 		} finally {
-		      pm.close();
+	        if (tx.isActive()) {
+	            tx.rollback();
+	        }
+	        pm.close();
 		}
 	}
 
 	@Override
 	public void removeStory(String storyId) throws NotLoggedInException {
 	    checkLoggedIn();
-	    PersistenceManager pm = getPersistenceManager();
+	    PersistenceManager pm = PMF.get().getPersistenceManager();
+	    javax.jdo.Transaction tx = pm.currentTransaction();
 	    try {
 	      long deleteCount = 0;
 	      Query q = pm.newQuery(Story.class, "user == u");
@@ -124,7 +135,7 @@ StoryService {
 	@Override
 	public List<StoryDetailClient> getStories() throws NotLoggedInException {
 	    checkLoggedIn();
-	    PersistenceManager pm = getPersistenceManager();
+	    PersistenceManager pm = PMF.get().getPersistenceManager();
 	    List<StoryDetailClient> storyIds = new ArrayList<StoryDetailClient>();
 	    
 	    try {
@@ -161,10 +172,5 @@ StoryService {
 		UserService userService = UserServiceFactory.getUserService();
 		return userService.getCurrentUser();
 	}
-
-	private PersistenceManager getPersistenceManager() {
-		return PMF.getPersistenceManager();
-	}
-
 
 }

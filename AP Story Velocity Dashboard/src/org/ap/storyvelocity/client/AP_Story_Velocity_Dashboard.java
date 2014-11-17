@@ -167,6 +167,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			
 			// add default stories
 			//addStoryToDatabase("STORY1");
+			/*
 			addStory("STORY1");
 			addStory("STORY2");
 			addStory("STORY3");
@@ -177,17 +178,18 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			addStory("STORY8");
 			addStory("STORY9");
 			addStory("STORY10");
+			*/
 			
 			addDefaultStories("STORY1");
-			addDefaultStories("STORY2");
-			addDefaultStories("STORY3");
-			addDefaultStories("STORY4");
-			addDefaultStories("STORY5");
-			addDefaultStories("STORY6");
-			addDefaultStories("STORY7");
-			addDefaultStories("STORY8");
-			addDefaultStories("STORY9");
-			addDefaultStories("STORY10");
+			//addDefaultStories("STORY2");
+			//addDefaultStories("STORY3");
+			//addDefaultStories("STORY4");
+			//addDefaultStories("STORY5");
+			//addDefaultStories("STORY6");
+			//addDefaultStories("STORY7");
+			//addDefaultStories("STORY8");
+			//addDefaultStories("STORY9");
+			//addDefaultStories("STORY10");
 			
 			
 			// setup timer to refresh list automatically

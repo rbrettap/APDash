@@ -19,7 +19,7 @@ import com.google.appengine.api.datastore.Key;
 import com.google.appengine.datanucleus.annotations.Unowned;
 
 
-@PersistenceCapable(identityType = IdentityType.APPLICATION, detachable="true")
+@PersistenceCapable
 public class StoryDetail
 {
 	@PrimaryKey
@@ -39,11 +39,8 @@ public class StoryDetail
 	@Persistent
 	private String active;
 	
-	@Persistent
-	@Unowned
-	//@Element(dependent = "true")
-	//@Order(extensions = @Extension(vendorName="datanucleus",key="list-ordering", value="pageViewDate desc"))
-	private List<PageView> pageViewSets = new ArrayList<PageView>();
+	 @Persistent(mappedBy = "storyDetail")
+	public List<PageView> pageViewSets;
 
 	public StoryDetail()
 	{
@@ -60,6 +57,10 @@ public class StoryDetail
 
 	public Key getKey() {
         return key;
+    }
+	
+	public Key getId() {
+		return key;
     }
 
 	public void setKey(Key key) {
@@ -96,6 +97,11 @@ public class StoryDetail
 		return pageViewSets;
 	}
 
+	public void addPageViewSet(PageView pageView) {
+		this.pageViewSets.add(pageView);
+	}
+
+	
 	public void setPageViewSets(List<PageView> pageViewSets) {
 		this.pageViewSets = pageViewSets;
 	}
