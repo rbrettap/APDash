@@ -27,6 +27,9 @@ import com.google.gwt.i18n.client.NumberFormat;
 
 import java.util.Date;
 
+import org.ap.storyvelocity.server.PageView;
+import org.ap.storyvelocity.shared.StoryDetailClient;
+
 import com.google.gwt.user.client.ui.Image;
 
 
@@ -167,8 +170,8 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			
 			// add default stories
 			//addStoryToDatabase("STORY1");
-			/*
-			addStory("STORY1");
+			
+			addStory("STORY1");			
 			addStory("STORY2");
 			addStory("STORY3");
 			addStory("STORY4");
@@ -178,18 +181,18 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			addStory("STORY8");
 			addStory("STORY9");
 			addStory("STORY10");
-			*/
+			
 			
 			addDefaultStories("STORY1");
-			//addDefaultStories("STORY2");
-			//addDefaultStories("STORY3");
-			//addDefaultStories("STORY4");
-			//addDefaultStories("STORY5");
-			//addDefaultStories("STORY6");
-			//addDefaultStories("STORY7");
-			//addDefaultStories("STORY8");
-			//addDefaultStories("STORY9");
-			//addDefaultStories("STORY10");
+			addDefaultStories("STORY2");
+			addDefaultStories("STORY3");
+			addDefaultStories("STORY4");
+			addDefaultStories("STORY5");
+			addDefaultStories("STORY6");
+			addDefaultStories("STORY7");
+			addDefaultStories("STORY8");
+			addDefaultStories("STORY9");
+			addDefaultStories("STORY10");
 			
 			
 			// setup timer to refresh list automatically
@@ -220,7 +223,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 				//double change = pageViews * MAX_PRICE_CHANGE
 				//		* (Random.nextDouble() * 2.0 - 1.0);
 
-				pVes[i] = new StoryDetailClient((String) stories.get(i), today, timeInApp, pageViews, velocity, trendfifteenmins, active);
+				pVes[i] = new StoryDetailClient((String) stories.get(i), today.getTime(), timeInApp, pageViews, velocity, trendfifteenmins, active);
 			}
 
 			updateTable(pVes);
@@ -277,9 +280,9 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			}
 
 			int row = stories.indexOf(storyPageView.getStoryId()) + 1;
-			
+			Date d = new Date(storyPageView.getPubDate());
 			DateTimeFormat sdf = DateTimeFormat.getFormat("MMMM dd, yyyy HH:mm aa");
-			String pubDate = sdf.format(storyPageView.getPubDate());
+			String pubDate = sdf.format(d);
 			
 			String timeInApp = storyPageView.getTimeInApp();
 			int velocity = storyPageView.getVelocity();
@@ -365,12 +368,12 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		}
 
 		
-		private void addDefaultStories(final String symbol) {
+		private void addDefaultStories(final String storyId) {
 
 		    // add the stock to the list
 		    int row = storyFlexTable.getRowCount();
-		    stories.add(symbol);
-		    storyFlexTable.setText(row, 0, symbol);
+		    stories.add(storyId);
+		    storyFlexTable.setText(row, 0, storyId);
 		    storyFlexTable.setWidget(row, 2, new Label());
 		    storyFlexTable.getCellFormatter().addStyleName(row, 1, "watchListNumericColumn");
 		    storyFlexTable.getCellFormatter().addStyleName(row, 2, "watchListNumericColumn");
@@ -385,14 +388,34 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		    removeStock.addStyleDependentName("remove");
 		    removeStock.addClickHandler(new ClickHandler() {
 		    public void onClick(ClickEvent event) {					
-		        int removedIndex = stories.indexOf(symbol);
+		        int removedIndex = stories.indexOf(storyId);
 		        stories.remove(removedIndex);
 		        storyFlexTable.removeRow(removedIndex + 1);
 		    }
 		    });
 		    storyFlexTable.setWidget(row, 7, removeStock);	
-			
+		    
+		    // now we need to retrieve the story record from the database....
+		    getStoryDetails(storyId);
 		}
+		
+		private void getStoryDetails(final String storyId) {
+			
+			  storyService.getStoryDetails(storyId, new AsyncCallback<StoryDetailClient>() {
+		      public void onFailure(Throwable error) {
+		    	  
+		      }
+		      public void onSuccess(StoryDetailClient storyDetail) {
+		        
+					StoryDetailClient[] pVes = new StoryDetailClient[1];
+					
+					pVes[0] = storyDetail;
+					updateTable(pVes);
+		      }
+		    });
+	}
+		
+		
 		
 	}
 

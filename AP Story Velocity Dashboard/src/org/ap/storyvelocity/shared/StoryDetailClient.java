@@ -1,4 +1,4 @@
-package org.ap.storyvelocity.client;
+package org.ap.storyvelocity.shared;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -6,7 +6,7 @@ import java.util.Date;
 public class StoryDetailClient implements Serializable
 {
 	private String storyId;
-	private Date pubDate;
+	private long pubDate;
 	private String timeInApp;
 	private int pageviews;
 	private int velocity; 
@@ -19,7 +19,7 @@ public class StoryDetailClient implements Serializable
 	{
 	}
 
-	public StoryDetailClient(String storyId, Date pubDate, String timeInApp, int pageviews, int velocity, int trendfifteenmins, String active)
+	public StoryDetailClient(String storyId, long pubDate, String timeInApp, int pageviews, int velocity, int trendfifteenmins, String active)
 	{
 		this.storyId = storyId;
 		this.pubDate = pubDate;
@@ -40,11 +40,11 @@ public class StoryDetailClient implements Serializable
 		this.storyId = storyId;
 	}
 
-	public Date getPubDate() {
+	public Long getPubDate() {
 		return pubDate;
 	}
 
-	public void setPubDate(Date pubDate) {
+	public void setPubDate(Long pubDate) {
 		this.pubDate = pubDate;
 	}
 

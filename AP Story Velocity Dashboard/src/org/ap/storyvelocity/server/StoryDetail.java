@@ -1,5 +1,6 @@
 package org.ap.storyvelocity.server;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -11,17 +12,19 @@ import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.NotPersistent;
 import javax.jdo.annotations.PrimaryKey;
-import javax.jdo.annotations.Extension;
-import javax.jdo.annotations.Order;
-import javax.jdo.annotations.Persistent;
 
 import com.google.appengine.api.datastore.Key;
-import com.google.appengine.datanucleus.annotations.Unowned;
+import com.google.gwt.user.client.rpc.IsSerializable;
 
 
-@PersistenceCapable
-public class StoryDetail
+@PersistenceCapable(identityType = IdentityType.APPLICATION, detachable="true")
+public class StoryDetail implements Serializable
 {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	@PrimaryKey
 	@Persistent(valueStrategy = IdGeneratorStrategy.IDENTITY)
 	private Key key;
@@ -29,7 +32,7 @@ public class StoryDetail
 	@Persistent
 	private String storyId;
 	@Persistent
-	private Date pubDate;
+	private long pubDate;
 	@Persistent
 	private String timeInApp;
 	@NotPersistent
@@ -40,13 +43,13 @@ public class StoryDetail
 	private String active;
 	
 	 @Persistent(mappedBy = "storyDetail")
-	public List<PageView> pageViewSets;
+	public List<PageView> pageViewSets = new java.util.ArrayList<PageView>();
 
 	public StoryDetail()
 	{
 	}
 
-	public StoryDetail(String storyId, Date pubDate, String timeInApp, int trendfifteenmins, String active)
+	public StoryDetail(String storyId, long pubDate, String timeInApp, int trendfifteenmins, String active)
 	{
 		this.storyId = storyId;
 		this.pubDate = pubDate;
@@ -77,11 +80,11 @@ public class StoryDetail
 		this.storyId = storyId;
 	}
 
-	public Date getPubDate() {
+	public long getPubDate() {
 		return pubDate;
 	}
 
-	public void setPubDate(Date pubDate) {
+	public void setPubDate(long pubDate) {
 		this.pubDate = pubDate;
 	}
 
@@ -102,7 +105,7 @@ public class StoryDetail
 	}
 
 	
-	public void setPageViewSets(List<PageView> pageViewSets) {
+	public void setPageViewSets(ArrayList<PageView> pageViewSets) {
 		this.pageViewSets = pageViewSets;
 	}
 
@@ -113,7 +116,7 @@ public class StoryDetail
 	public void setVelocity(int velocity) {
 		this.velocity = velocity;
 	}
-
+	
 	public int getTrendFifteenMins() {
 		return trendfifteenmins;
 	}

@@ -28,8 +28,11 @@ import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
 
 import org.ap.storyvelocity.client.NotLoggedInException;
-import org.ap.storyvelocity.client.StoryDetailClient;
+import org.ap.storyvelocity.shared.StoryDetailClient;
 import org.ap.storyvelocity.client.StoryService;
+import org.ap.storyvelocity.server.StoryDetail;
+import org.ap.storyvelocity.server.PageView;
+import org.ap.storyvelocity.server.Story;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
@@ -52,7 +55,6 @@ StoryService {
 		try {
 
 			Key key = KeyFactory.createKey(StoryDetail.class.getSimpleName(), storyId);
-			Key key2 = KeyFactory.createKey(PageView.class.getSimpleName(), storyId);
 			
 			int pageViews = 100;
 			int pageViews1 = 150;
@@ -62,19 +64,21 @@ StoryService {
 			Calendar cal = Calendar.getInstance();
 			today = cal.getTime();
 			
-			cal.add(Calendar.DAY_OF_YEAR, -1);
-			Date yesterday = cal.getTime();
+			Date yesterday = new Date();
+			Calendar cal2 = Calendar.getInstance();
+			cal2.add(Calendar.DAY_OF_YEAR, -1);
+			yesterday = cal2.getTime();
 	
 			
 			String timeInApp = "15 mins";
 			int trendfifteenmins = 25;
 			
-			org.ap.storyvelocity.server.StoryDetail e = new org.ap.storyvelocity.server.StoryDetail(storyId, today, timeInApp, trendfifteenmins, active);
+			org.ap.storyvelocity.server.StoryDetail e = new org.ap.storyvelocity.server.StoryDetail(storyId, today.getTime(), timeInApp, trendfifteenmins, active);
 
-	        PageView pv = new PageView(yesterday, pageViews);
-			PageView pv1 = new PageView(today, pageViews1);
+	        PageView pv = new PageView(today, pageViews);
+			PageView pv1 = new PageView(yesterday, pageViews1);
 			e.setKey(key);
-			List pageViewSets = new ArrayList();
+			ArrayList<PageView> pageViewSets = new ArrayList<PageView>();
 			pageViewSets.add(pv);
 			pageViewSets.add(pv1);
 			e.pageViewSets = pageViewSets;
@@ -108,6 +112,48 @@ StoryService {
 	        pm.close();
 		}
 	}
+	
+	@Override
+	public StoryDetailClient getStoryDetails(String storyId) throws NotLoggedInException {
+	    //checkLoggedIn();
+		 PersistenceManager pm = PMF.get().getPersistenceManager();
+		 org.ap.storyvelocity.server.StoryDetail storyDetailResult = null;
+		 org.ap.storyvelocity.shared.StoryDetailClient storyDetailClient = null;
+
+	      try {
+		        
+	    	  Key key = KeyFactory.createKey(StoryDetail.class.getSimpleName(), storyId);
+			  org.ap.storyvelocity.server.StoryDetail e = pm.getObjectById(org.ap.storyvelocity.server.StoryDetail.class, key);
+	    	  //Query q = pm.newQuery(StoryDetail.class, "storyId == storyIdParam");
+	    	  //q.declareParameters("String storyIdParam");
+	    	  //List<StoryDetail> results = (List<StoryDetail>) q.execute(storyId);
+	    	  
+	    		  // should only be one....
+	    		  storyDetailResult = (StoryDetail)e;
+	    		  List<PageView> pageViewSets = storyDetailResult.getPageViewSets();
+	    		  
+					int totalPageViews = 0;
+					
+					for (int ii = 0; ii < pageViewSets.size(); ii++)
+					{
+						PageView pv = (PageView)pageViewSets.get(ii);
+						totalPageViews += pv.getPageviews();
+					}
+
+					storyDetailResult.setActive("YES");
+					// clear this out before sending on the wire...
+					storyDetailClient = new StoryDetailClient(storyDetailResult.getStoryId(), storyDetailResult.getPubDate(), storyDetailResult.getTimeInApp(), 
+							totalPageViews, storyDetailResult.getVelocity(), storyDetailResult.getTrendFifteenMins(), storyDetailResult.getActive());
+
+
+	      } finally {
+	          pm.close();
+	      }
+		  return storyDetailClient;
+	      
+	}
+ 
+
 
 	@Override
 	public void removeStory(String storyId) throws NotLoggedInException {
