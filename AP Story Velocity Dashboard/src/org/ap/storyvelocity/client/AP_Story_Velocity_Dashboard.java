@@ -27,7 +27,6 @@ import com.google.gwt.i18n.client.NumberFormat;
 
 import java.util.Date;
 
-import org.ap.storyvelocity.server.PageView;
 import org.ap.storyvelocity.shared.StoryDetailClient;
 
 import com.google.gwt.user.client.ui.Image;
@@ -48,7 +47,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		private Button addButton;
 		private Label lastUpdatedLabel;
 		private ArrayList <String> stories = new ArrayList<String>();  
-		private static final int REFRESH_INTERVAL = 5000;
+		private static final int REFRESH_INTERVAL = 60000;
 		private Image image;
 		private Label lblStoryWatcher;
 		
@@ -170,7 +169,11 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			
 			// add default stories
 			//addStoryToDatabase("STORY1");
+			//String[] storyIds = new String[]{"STORY1", "STORY2", "STORY3", "STORY4", "STORY5", "STORY6",
+			//	"STORY7", "STORY8", "STORY9", "STORY10"};
+			//addStories(storyIds);
 			
+            /*
 			addStory("STORY1");			
 			addStory("STORY2");
 			addStory("STORY3");
@@ -181,6 +184,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			addStory("STORY8");
 			addStory("STORY9");
 			addStory("STORY10");
+			*/
 			
 			
 			addDefaultStories("STORY1");
@@ -199,6 +203,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			Timer refreshTimer = new Timer() {
 				public void run()
 				{
+					refreshWatchListAfter5Mins();
 					//refreshWatchList();
 				}
 			};
@@ -206,6 +211,17 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 
 			
 		}
+		
+		private void refreshWatchListAfter5Mins() {
+	
+			//StoryDetailClient[] pVes = new StoryDetailClient[stories.size()];
+			getStoryDetails("STORY1");
+			//updateTable(pVes);
+
+			
+		}
+		
+		
 		private void refreshWatchList() {
 			final int MAX_PRICE = 100; // $100
 			final double MAX_PRICE_CHANGE = 0.02; // +/- 2%
@@ -240,6 +256,17 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			      }
 			    });
 		}
+		
+		
+		private void addStories(final String[] storyIds) {
+		    storyService.addStoryDetails(storyIds, new AsyncCallback<Void>() {
+		      public void onFailure(Throwable error) {
+		      }
+		      public void onSuccess(Void ignore) {
+		        //displayStock(symbol);
+		      }
+		    });
+	}
 		  
 		  
 		
@@ -414,7 +441,24 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		      }
 		    });
 	}
-		
+	
+		/*
+		private void getStoryDetailsByBulk(final String[] storyIds) {
+			
+			  storyService.getStoryDetails(storyIds, new AsyncCallback<StoryDetailClient>() {
+		      public void onFailure(Throwable error) {
+		    	  
+		      }
+		      public void onSuccess(StoryDetailClient storyDetail) {
+		        
+					StoryDetailClient[] pVes = new StoryDetailClient[1];
+					
+					pVes[0] = storyDetail;
+					updateTable(pVes);
+		      }
+		    });
+	}
+	*/
 		
 		
 	}
