@@ -82,7 +82,7 @@ public class StoryAnalyticsAPI {
 		return analyticsService;
 	}
 	
-    public void getRealtimeQuery() {
+    public void getRealtimeQuery(int numResults) {
 
         /**
          * 1. Create and Execute a Real Time Report
@@ -108,7 +108,7 @@ public class StoryAnalyticsAPI {
                     .setDimensions("rt:eventCategory,rt:eventAction")
                     .setSort("-rt:totalEvents")
                     .setFilters("rt:eventCategory==Selected Story")
-                    .setMaxResults(5);
+                    .setMaxResults(numResults);
             
 
             String profileId = getFirstProfileId(analyticsService);

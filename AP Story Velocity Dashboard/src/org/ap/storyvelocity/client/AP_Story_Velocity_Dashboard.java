@@ -339,6 +339,29 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			*/
 
 			int row = rowCount + 1;
+			
+			storyFlexTable.setText(row, 0, storyPageView.getStoryId());
+			storyFlexTable.setWidget(row, 2, new Label());
+			storyFlexTable.getCellFormatter().addStyleName(row, 1, "watchListNumericColumn");
+			storyFlexTable.getCellFormatter().addStyleName(row, 2, "watchListNumericColumn");
+			storyFlexTable.getCellFormatter().addStyleName(row, 3, "watchListNumericColumn");
+			storyFlexTable.getCellFormatter().addStyleName(row, 4, "watchListNumericColumn");
+			storyFlexTable.getCellFormatter().addStyleName(row, 5, "watchListNumericColumn");
+			storyFlexTable.getCellFormatter().addStyleName(row, 6, "watchListNumericColumn");
+			storyFlexTable.getCellFormatter().addStyleName(row, 7, "watchListRemoveColumn");	
+			
+		    // add button to remove this stock from the list
+		    Button removeStock = new Button("x");
+		    removeStock.addStyleDependentName("remove");
+		    removeStock.addClickHandler(new ClickHandler() {
+		    public void onClick(ClickEvent event) {					
+		        //int removedIndex = stories.indexOf(storyPageView.getStoryId());
+		        //stories.remove(removedIndex);
+		        //storyFlexTable.removeRow(removedIndex + 1);
+		    }
+		    });
+		    storyFlexTable.setWidget(row, 7, removeStock);	
+			
 			Date d = new Date(storyPageView.getPubDate());
 			DateTimeFormat sdf = DateTimeFormat.getFormat("MMMM dd, yyyy HH:mm aa");
 			String pubDate = sdf.format(d);

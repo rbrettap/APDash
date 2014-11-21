@@ -362,8 +362,10 @@ StoryService {
 	@Override
 	public String fetchRealTimeAnalytics() throws NotLoggedInException {
 		
+		int numResults = 10;
+		
 		StoryAnalyticsAPI storyAnaltyicsAPI = StoryAnalyticsAPI.getInstance();
-		storyAnaltyicsAPI.getRealtimeQuery();
+		storyAnaltyicsAPI.getRealtimeQuery(numResults);
 		addGADetailsToServer();
 
 		return null;
