@@ -13,6 +13,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 public interface StoryServiceAsync {
 	  public void addStoryDetail(String storyName, AsyncCallback<Void> async);
 	  public void addStory(String storyName, AsyncCallback<Void> async);
+	  public void addStoryDetails(String[] storyNames, AsyncCallback<Void> async);
 	  public void removeStory(String storyName, AsyncCallback<Void> async);
 	  public void getStories(AsyncCallback<List<StoryDetailClient>> async);
 	  public void getStoryDetails(String storyId, AsyncCallback<StoryDetailClient> async);

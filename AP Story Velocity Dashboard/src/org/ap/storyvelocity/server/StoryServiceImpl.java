@@ -96,6 +96,62 @@ StoryService {
 		}
 	}
 	
+	
+	@Override
+	public void addStoryDetails(String[] storyNames) throws NotLoggedInException {
+		checkLoggedIn();
+		 
+		PersistenceManager pm = PMF.get().getPersistenceManager();
+	     javax.jdo.Transaction tx = pm.currentTransaction();
+		
+		try {
+			
+			for (int i = 0; i < storyNames.length; i++)
+			{
+
+			Key key = KeyFactory.createKey(StoryDetail.class.getSimpleName(), storyNames[i]);
+			
+			int pageViews = 100;
+			int pageViews1 = 150;
+			int velocity = 500;
+			String active = "YES";
+			Date today = new Date();
+			Calendar cal = Calendar.getInstance();
+			today = cal.getTime();
+			
+			Date yesterday = new Date();
+			Calendar cal2 = Calendar.getInstance();
+			cal2.add(Calendar.DAY_OF_YEAR, -1);
+			yesterday = cal2.getTime();
+	
+			
+			String timeInApp = "15 mins";
+			int trendfifteenmins = 25;
+			
+			org.ap.storyvelocity.server.StoryDetail e = new org.ap.storyvelocity.server.StoryDetail(storyNames[i], today.getTime(), timeInApp, trendfifteenmins, active);
+
+	        PageView pv = new PageView(today, pageViews);
+			PageView pv1 = new PageView(yesterday, pageViews1);
+			e.setKey(key);
+			ArrayList<PageView> pageViewSets = new ArrayList<PageView>();
+			pageViewSets.add(pv);
+			pageViewSets.add(pv1);
+			e.pageViewSets = pageViewSets;
+			
+			
+			  tx.begin();
+		      pm.makePersistent(e);
+		      tx.commit();
+			}
+		    
+		} finally {
+			if (tx.isActive()) {
+				tx.rollback();
+		    }
+			pm.close();
+		}
+	}
+	
 	@Override
 	public void addStory(String storyId) throws NotLoggedInException {
 		checkLoggedIn();
@@ -132,13 +188,26 @@ StoryService {
 	    		  storyDetailResult = (StoryDetail)e;
 	    		  List<PageView> pageViewSets = storyDetailResult.getPageViewSets();
 	    		  
-					int totalPageViews = 0;
+				   int totalPageViews = 0;
+				   
+				   // need to calculate timeInApp
+				   Date pubDate = new Date();
 					
 					for (int ii = 0; ii < pageViewSets.size(); ii++)
 					{
 						PageView pv = (PageView)pageViewSets.get(ii);
 						totalPageViews += pv.getPageviews();
+						
+						if (pv.getPageViewDate().before(pubDate))
+                          pubDate = pv.getPageViewDate();
 					}
+					
+					Date today = new Date();
+					Calendar cal = Calendar.getInstance();
+					today = cal.getTime();
+					double timeDifference = (double)((today.getTime() - pubDate.getTime())/(1000*60));
+					String timeInApp = timeDifference + " mins";
+					storyDetailResult.setTimeInApp(timeInApp);
 
 					storyDetailResult.setActive("YES");
 					// clear this out before sending on the wire...

@@ -12,6 +12,7 @@ public class StoryDetailClient implements Serializable
 	private int velocity; 
 	private int trendfifteenmins;
 	private String active;
+	public String[] pageViewTrend = new String[]{"5,10,15,20, 25, 30, 35, 40 45, 50"};
 	
 	private static final long serialVersionUID = 1L;
 
