@@ -183,8 +183,10 @@ StoryService {
 	    	  //Query q = pm.newQuery(StoryDetail.class, "storyId == storyIdParam");
 	    	  //q.declareParameters("String storyIdParam");
 	    	  //List<StoryDetail> results = (List<StoryDetail>) q.execute(storyId);
-	    	  
-	    		  // should only be one....
+	    	      if (e == null)
+	    	    	  return null;
+			  
+	    		  // should only be one or none....
 	    		  storyDetailResult = (StoryDetail)e;
 	    		  List<PageView> pageViewSets = storyDetailResult.getPageViewSets();
 	    		  
@@ -222,6 +224,74 @@ StoryService {
 	      
 	}
  
+	
+	@Override
+	public List<StoryDetailClient> getStoryDetailsInBulk(int numResults) {
+		 PersistenceManager pm = PMF.get().getPersistenceManager();
+		 org.ap.storyvelocity.server.StoryDetail storyDetailResult = null;
+		 org.ap.storyvelocity.shared.StoryDetailClient storyDetailClient = null;
+		 List<StoryDetailClient> sdclientlist = new ArrayList<StoryDetailClient>();
+
+	      try {
+		        
+	    	  //Key key = KeyFactory.createKey(StoryDetail.class.getSimpleName(), storyId);
+			  //org.ap.storyvelocity.server.StoryDetail e = pm.getObjectById(org.ap.storyvelocity.server.StoryDetail.class, key);
+	    	  Query q = pm.newQuery(StoryDetail.class);
+	    	  q.setOrdering("pubDate desc");
+	    	  q.setRange(0, 10);
+	    	  List<StoryDetail> results = (List<StoryDetail>) q.execute();
+	    	  
+	    	
+	    	  if (!results.isEmpty()) {
+	    		    for (StoryDetail sd : results) {
+	    		    	 // should only be one or none....
+	    		       Key key = KeyFactory.createKey(StoryDetail.class.getSimpleName(), sd.getStoryId());
+	    			   sd = pm.getObjectById(org.ap.storyvelocity.server.StoryDetail.class, key);
+
+	    			   List<PageView> pageViewSets = sd.getPageViewSets();
+	    	    		  
+	   				   int totalPageViews = 0;
+	   				   
+	   				   // need to calculate timeInApp
+	   				   Date pubDate = new Date();
+	   					
+	   					for (int ii = 0; ii < pageViewSets.size(); ii++)
+	   					{
+	   						PageView pv = (PageView)pageViewSets.get(ii);
+	   						totalPageViews += pv.getPageviews();
+	   						
+	   						if (pv.getPageViewDate().before(pubDate))
+	                             pubDate = pv.getPageViewDate();
+	   					}
+	   					
+	   					Date today = new Date();
+						Calendar cal = Calendar.getInstance();
+						today = cal.getTime();
+						double timeDifference = (double)((today.getTime() - pubDate.getTime())/(1000*60));
+						String timeInApp = timeDifference + " mins";
+						sd.setTimeInApp(timeInApp);
+
+						sd.setActive("YES");
+   	
+						// clear this out before sending on the wire...
+					    storyDetailClient = new StoryDetailClient(sd.getStoryId(), sd.getPubDate(), 
+					    sd.getTimeInApp(), totalPageViews, sd.getVelocity(), sd.getTrendFifteenMins(), 
+					    sd.getActive());
+					    
+					    sdclientlist.add(storyDetailClient);
+	    		    }
+	    		  } else {
+	    		    // Handle "no results" case
+	       	    	  return null;
+	       	   	
+	    		  }
+	    	  
+	      } finally {
+	          pm.close();
+	      }
+		  return sdclientlist;
+	      
+	}
 
 
 	@Override
@@ -286,6 +356,115 @@ StoryService {
      private User getUser() {
 		UserService userService = UserServiceFactory.getUserService();
 		return userService.getCurrentUser();
+	}
+
+
+	@Override
+	public String fetchRealTimeAnalytics() throws NotLoggedInException {
+		
+		StoryAnalyticsAPI storyAnaltyicsAPI = StoryAnalyticsAPI.getInstance();
+		storyAnaltyicsAPI.getRealtimeQuery();
+		addGADetailsToServer();
+
+		return null;
+	}
+	
+	public boolean addGADetailsToServer() throws NotLoggedInException {
+		checkLoggedIn();
+		 
+		PersistenceManager pm = PMF.get().getPersistenceManager();
+	     javax.jdo.Transaction tx = pm.currentTransaction();
+		
+		try {
+			
+			for (String keyEntryMap: StoryAnalyticsAPI.getInstance().gaDataMap.keySet())
+			{
+			   Key key = KeyFactory.createKey(StoryDetail.class.getSimpleName(), keyEntryMap);
+			   
+			   String active = "YES";
+			   GAStory gaStory = (GAStory)StoryAnalyticsAPI.getInstance().gaDataMap.get(keyEntryMap);
+			   String ga_storyName = gaStory.getGAStoryName();
+			   Date ga_retrievaldate = gaStory.getGARetrievalDate();
+			   int ga_pageview = gaStory.getGAPageviews();
+			   String timeInApp = "";
+			   int trendfifteenmins = 0;
+			   
+			   org.ap.storyvelocity.server.StoryDetail sdetail =  getStoryDetailById(ga_storyName);
+			   
+			   if (sdetail == null)
+			   {
+				   sdetail = new org.ap.storyvelocity.server.StoryDetail(ga_storyName, ga_retrievaldate.getTime(), 
+						   timeInApp, trendfifteenmins, active);
+				   
+			        PageView pv = new PageView(ga_retrievaldate, ga_pageview);
+			        sdetail.setKey(key);
+					ArrayList<PageView> pageViewSets = new ArrayList<PageView>();
+					pageViewSets.add(pv);
+					sdetail.pageViewSets = pageViewSets;
+					sdetail.setVelocity(ga_pageview);
+					
+			   }
+			   else
+			   {
+				   // need to do persistent calculations here....
+				   //timeInApp = "15 mins";
+				   //trendfifteenmins = 25;
+				   int velocity = 0;
+
+				   sdetail.setKey(key);
+				   PageView pv = new PageView(ga_retrievaldate, ga_pageview);
+				   sdetail.pageViewSets.add(pv);
+				   
+				   for (int i = 0; i < sdetail.pageViewSets.size(); i++)
+				   {
+					  PageView pvi =  (PageView)sdetail.pageViewSets.get(i);
+					  velocity += pvi.getPageviews();
+				   }
+				   sdetail.setVelocity(velocity);
+				   
+			   }
+						
+			  tx.begin();
+		      pm.makePersistent(sdetail);
+		      tx.commit();
+		      
+		      // after it's done should clear hashmap and flag inProgress ....
+		      
+			}
+		    
+		} finally {
+			if (tx.isActive()) {
+				tx.rollback();
+		    }
+			pm.close();
+		}
+		return true;
+	}
+	
+	public StoryDetail getStoryDetailById(String storyId) {
+		 PersistenceManager pm = PMF.get().getPersistenceManager();
+		 org.ap.storyvelocity.server.StoryDetail storyDetailResult = null;
+
+	      try {
+		        
+	    	  Key key = KeyFactory.createKey(StoryDetail.class.getSimpleName(), storyId);
+	    	  
+	    	  Query q = pm.newQuery(StoryDetail.class, "storyId == storyIdParam");
+	    	  q.declareParameters("String storyIdParam");
+	    	  List<StoryDetail> results = (List<StoryDetail>) q.execute(storyId);
+	    	  
+	    	  if (results.size() > 0)
+	    	  {
+	    	    storyDetailResult = pm.getObjectById(org.ap.storyvelocity.server.StoryDetail.class, key);
+	    	  }
+
+			  if (storyDetailResult == null)
+	    	    return null;
+			  
+	      } finally {
+	          pm.close();
+	      }
+		  return storyDetailResult;	      
 	}
 
 }

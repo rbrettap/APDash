@@ -3,7 +3,6 @@ package org.ap.storyvelocity.client;
 import java.util.List;
 
 import org.ap.storyvelocity.shared.StoryDetailClient;
-import org.ap.storyvelocity.server.StoryDetail;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
 
@@ -17,4 +16,6 @@ public interface StoryServiceAsync {
 	  public void removeStory(String storyName, AsyncCallback<Void> async);
 	  public void getStories(AsyncCallback<List<StoryDetailClient>> async);
 	  public void getStoryDetails(String storyId, AsyncCallback<StoryDetailClient> async);
+	  public void getStoryDetailsInBulk(int numResults,  AsyncCallback<List<StoryDetailClient>> async);	
+	  public void fetchRealTimeAnalytics(AsyncCallback<String> async);
 }

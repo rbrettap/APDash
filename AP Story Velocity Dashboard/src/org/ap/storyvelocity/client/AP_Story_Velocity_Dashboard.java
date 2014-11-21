@@ -19,6 +19,7 @@ import com.google.gwt.event.dom.client.KeyPressHandler;
 import com.google.gwt.event.dom.client.KeyPressEvent;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Random;
@@ -43,9 +44,12 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		private VerticalPanel mainPanel;
 		private FlexTable storyFlexTable;
 		private HorizontalPanel addPanel;
+		private HorizontalPanel feedIngesterPanel;
 		private TextBox newSymbolTextBox;
 		private Button addButton;
+		private Button feedIngesterButton;
 		private Label lastUpdatedLabel;
+		private Label lastFetchedLabel;
 		private ArrayList <String> stories = new ArrayList<String>();  
 		private static final int REFRESH_INTERVAL = 60000;
 		private Image image;
@@ -95,6 +99,8 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			{
 				mainPanel = new VerticalPanel();
 				mainPanel.add(signOutLink);
+				
+
 				rootPanel.add(mainPanel, 5, 5);
 				mainPanel.setSize("440px", "290px");
 				{
@@ -106,6 +112,23 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 					lblStoryWatcher.setStyleName("gwt-Label-StockWatcher");
 					
 					mainPanel.add(lblStoryWatcher);
+				}
+				
+				feedIngesterPanel = new HorizontalPanel();
+				feedIngesterPanel.addStyleName("addPanel");
+				mainPanel.add(feedIngesterPanel);				
+				{
+					feedIngesterButton = new Button("Get Realtime Data");
+					feedIngesterButton.setStyleName("gwt-Button-Add");
+					feedIngesterButton.addClickHandler(new ClickHandler() {
+						public void onClick(ClickEvent event) {
+							fetchRealTimeAnalytics();
+						}
+					});
+					feedIngesterButton.setText("Start Fetching Realtime Data");
+					feedIngesterPanel.add(feedIngesterButton);
+					lastFetchedLabel = new Label("  Last fetch was at: ");
+					feedIngesterPanel.add(lastFetchedLabel);
 				}
 				{
 					storyFlexTable = new FlexTable();
@@ -186,7 +209,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			addStory("STORY10");
 			*/
 			
-			
+			/*
 			addDefaultStories("STORY1");
 			addDefaultStories("STORY2");
 			addDefaultStories("STORY3");
@@ -197,7 +220,8 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			addDefaultStories("STORY8");
 			addDefaultStories("STORY9");
 			addDefaultStories("STORY10");
-			
+			*/
+			getStoryDetailsByBulk(10);
 			
 			// setup timer to refresh list automatically
 			Timer refreshTimer = new Timer() {
@@ -215,7 +239,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		private void refreshWatchListAfter5Mins() {
 	
 			//StoryDetailClient[] pVes = new StoryDetailClient[stories.size()];
-			getStoryDetails("STORY1");
+			//getStoryDetails("STORY1");
 			//updateTable(pVes);
 
 			
@@ -283,6 +307,12 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		   */
 		}
 		
+		private void updateFeedPanel(String updatedDate)
+		{
+			// change the last update timestamp
+			lastFetchedLabel.setText("Last update : " + updatedDate);
+		}
+		
 		
 		private void updateTable(StoryDetailClient[] pVes)
 		{
@@ -291,7 +321,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			
 			for (int i = 0; i < pVes.length; i++)
 			{
-				updateTable(pVes[i]);
+				updateTable(pVes[i], i);
 			}
 
 			// change the last update timestamp
@@ -299,14 +329,16 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 					+ DateTimeFormat.getMediumDateTimeFormat().format(new Date()));
 		}
 
-		private void updateTable(StoryDetailClient storyPageView) {
+		private void updateTable(StoryDetailClient storyPageView, int rowCount) {
 			// make sure the stock is still in our watch list
-			if (!stories.contains(storyPageView.getStoryId()))
+			/*  fix this
+			 * if (!stories.contains(storyPageView.getStoryId()))
 			{
 				return;
 			}
+			*/
 
-			int row = stories.indexOf(storyPageView.getStoryId()) + 1;
+			int row = rowCount + 1;
 			Date d = new Date(storyPageView.getPubDate());
 			DateTimeFormat sdf = DateTimeFormat.getFormat("MMMM dd, yyyy HH:mm aa");
 			String pubDate = sdf.format(d);
@@ -442,23 +474,43 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		    });
 	}
 	
-		/*
-		private void getStoryDetailsByBulk(final String[] storyIds) {
+
+	private void getStoryDetailsByBulk(final int numResults) {
 			
-			  storyService.getStoryDetails(storyIds, new AsyncCallback<StoryDetailClient>() {
+		storyService.getStoryDetailsInBulk(numResults, new AsyncCallback<List<StoryDetailClient>>() {
+		
+		public void onFailure(Throwable error) {
+		    	  
+		}
+		public void onSuccess(List<StoryDetailClient> result) {
+		       
+			StoryDetailClient[] pVes = new StoryDetailClient[result.size()];
+			
+			for (int i = 0; i < result.size(); i++)
+			{
+				pVes[i] = (StoryDetailClient)result.get(i);
+				updateTable(pVes[i], i);
+			}
+			
+		}
+
+		 });
+	}
+
+		
+     // feed fetcher functions......
+		private void fetchRealTimeAnalytics() {
+			
+			  storyService.fetchRealTimeAnalytics(new AsyncCallback<String>() {
 		      public void onFailure(Throwable error) {
 		    	  
 		      }
-		      public void onSuccess(StoryDetailClient storyDetail) {
+		      public void onSuccess(String feedIngestionDate) {
 		        
-					StoryDetailClient[] pVes = new StoryDetailClient[1];
-					
-					pVes[0] = storyDetail;
-					updateTable(pVes);
+		    	  updateFeedPanel(feedIngestionDate);
 		      }
 		    });
-	}
-	*/
+	}		
 		
 		
 	}
