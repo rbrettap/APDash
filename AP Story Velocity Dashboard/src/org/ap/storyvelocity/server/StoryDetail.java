@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import javax.jdo.annotations.Element;
 import javax.jdo.annotations.IdGeneratorStrategy;
@@ -14,6 +15,7 @@ import javax.jdo.annotations.NotPersistent;
 import javax.jdo.annotations.PrimaryKey;
 
 import com.google.appengine.api.datastore.Key;
+import com.google.appengine.datanucleus.annotations.Unowned;
 import com.google.gwt.user.client.rpc.IsSerializable;
 
 
@@ -34,6 +36,8 @@ public class StoryDetail implements Serializable
 	@Persistent
 	private long pubDate;
 	@Persistent
+	private long lastUpdatedDate;
+	@Persistent
 	private String timeInApp;
 	@NotPersistent
 	private int velocity;
@@ -42,8 +46,9 @@ public class StoryDetail implements Serializable
 	@Persistent
 	private String active;
 	
-	 @Persistent(mappedBy = "storyDetail")
-	public List<PageView> pageViewSets = new java.util.ArrayList<PageView>();
+	@Persistent
+	@Unowned
+	private List<PageView> pageViewSets;
 
 	public StoryDetail()
 	{
@@ -87,6 +92,14 @@ public class StoryDetail implements Serializable
 	public void setPubDate(long pubDate) {
 		this.pubDate = pubDate;
 	}
+	
+	public long getLastUpdatedDate() {
+		return lastUpdatedDate;
+	}
+
+	public void setLastUpdatedDate(long lastUpdatedDate) {
+		this.lastUpdatedDate = lastUpdatedDate;
+	}
 
 	public String getTimeInApp() {
 		return timeInApp;
@@ -105,7 +118,7 @@ public class StoryDetail implements Serializable
 	}
 
 	
-	public void setPageViewSets(ArrayList<PageView> pageViewSets) {
+	public void setPageViewSets(List<PageView> pageViewSets) {
 		this.pageViewSets = pageViewSets;
 	}
 

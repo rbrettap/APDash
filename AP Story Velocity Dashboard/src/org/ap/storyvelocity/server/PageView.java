@@ -23,8 +23,10 @@ public class PageView
 	private int pageviews;
 	@Persistent
 	private Date pageViewDate;
+	//@Persistent
+    //private StoryDetail storyDetail;
 	@Persistent
-    private StoryDetail storyDetail;
+	private String storyDetailId;
 
 	public PageView()
 	{
@@ -44,6 +46,18 @@ public class PageView
         this.key = key;
     }
 	
+	public String getStoryDetailId() {
+		return storyDetailId;
+	}
+
+	public void setStoryDetailId(String storyDetailId) {
+		this.storyDetailId = storyDetailId;
+	}
+
+	
+	
+	
+	/*  should be for owned example
 	public StoryDetail getStoryDetail() {
         return storyDetail;
     }
@@ -51,7 +65,7 @@ public class PageView
 	public void setStoryDetail(StoryDetail storyDetail) {
         this.storyDetail = storyDetail;
     }
-	
+	*/
 
 	public Date getPageViewDate() {
 		return pageViewDate;

@@ -81,7 +81,7 @@ StoryService {
 			ArrayList<PageView> pageViewSets = new ArrayList<PageView>();
 			pageViewSets.add(pv);
 			pageViewSets.add(pv1);
-			e.pageViewSets = pageViewSets;
+			e.setPageViewSets(pageViewSets);
 			
 			
 			tx.begin();
@@ -136,7 +136,7 @@ StoryService {
 			ArrayList<PageView> pageViewSets = new ArrayList<PageView>();
 			pageViewSets.add(pv);
 			pageViewSets.add(pv1);
-			e.pageViewSets = pageViewSets;
+			e.setPageViewSets(pageViewSets);
 			
 			
 			  tx.begin();
@@ -251,6 +251,7 @@ StoryService {
 	    			   List<PageView> pageViewSets = sd.getPageViewSets();
 	    	    		  
 	   				   int totalPageViews = 0;
+	   				   int totalPageViewsLast15 = 0;
 	   				   
 	   				   // need to calculate timeInApp
 	   				   Date pubDate = new Date();
@@ -260,16 +261,23 @@ StoryService {
 	   						PageView pv = (PageView)pageViewSets.get(ii);
 	   						totalPageViews += pv.getPageviews();
 	   						
+	   						// is pageView in the last 15 minutes.....
+	   						if (isPageViewInLast15minutes(pv.getPageViewDate()))
+	   								totalPageViewsLast15 += pv.getPageviews();
+	   								
+	   						
+	   						// make sure that the earliest pageViewDate qualifies as the pub Date
 	   						if (pv.getPageViewDate().before(pubDate))
 	                             pubDate = pv.getPageViewDate();
 	   					}
 	   					
-	   					Date today = new Date();
-						Calendar cal = Calendar.getInstance();
-						today = cal.getTime();
-						double timeDifference = (double)((today.getTime() - pubDate.getTime())/(1000*60));
-						String timeInApp = timeDifference + " mins";
+	   					double timeDifference = getTimeInApp(pubDate);
+	   					String timeInApp = timeDifference + " mins";
 						sd.setTimeInApp(timeInApp);
+						
+						int velocity = calculateVelocity(pageViewSets, timeDifference);
+						sd.setVelocity(velocity);
+						sd.setTrendFifteenMins(totalPageViewsLast15);
 
 						sd.setActive("YES");
    	
@@ -294,6 +302,58 @@ StoryService {
 	}
 
 
+	public int calculateVelocity(List<PageView> pageViewSets, double timeDifference)
+	{
+		   int totalPageViews = 0;
+		   
+
+		   Date pubDate = new Date();
+				
+			for (int ii = 0; ii < pageViewSets.size(); ii++)
+			{
+				PageView pv = (PageView)pageViewSets.get(ii);
+				totalPageViews += pv.getPageviews();
+				
+				if (pv.getPageViewDate().before(pubDate))
+                  pubDate = pv.getPageViewDate();
+			}
+			
+			int velocity = (int) ((totalPageViews / timeDifference) * 60);			
+			return velocity;
+	}
+	
+	// returns the time in app of the storyId
+	//
+	// 
+	public double getTimeInApp(Date pubDate)
+	{
+		double timeDifference = 0.0;
+		Date today = new Date();
+		Calendar cal = Calendar.getInstance();
+		today = cal.getTime();
+		timeDifference = (double)((today.getTime() - pubDate.getTime())/(1000*60));
+		
+		return timeDifference;
+	}
+	
+	
+	// calculates whether or not the page view was in the last 15 minutes...
+	public boolean isPageViewInLast15minutes(Date pubDate)
+	{
+		double timeDifference = 0.0;
+		Date today = new Date();
+		Calendar cal = Calendar.getInstance();
+		today = cal.getTime();
+		timeDifference = (double)((today.getTime() - pubDate.getTime())/(1000*60));
+		
+		if (timeDifference < 15)
+			return true;
+		
+		return false;
+	}
+	
+	
+	
 	@Override
 	public void removeStory(String storyId) throws NotLoggedInException {
 	    checkLoggedIn();
@@ -371,9 +431,9 @@ StoryService {
 		return null;
 	}
 	
+	// this method is designed to retrieve the real time GA data and store into the 
+	// datastore
 	public boolean addGADetailsToServer() throws NotLoggedInException {
-		checkLoggedIn();
-		 
 		PersistenceManager pm = PMF.get().getPersistenceManager();
 	     javax.jdo.Transaction tx = pm.currentTransaction();
 		
@@ -399,11 +459,16 @@ StoryService {
 						   timeInApp, trendfifteenmins, active);
 				   
 			        PageView pv = new PageView(ga_retrievaldate, ga_pageview);
+			        pv.setStoryDetailId(ga_storyName);
 			        sdetail.setKey(key);
-					ArrayList<PageView> pageViewSets = new ArrayList<PageView>();
+					List<PageView> pageViewSets = new ArrayList<PageView>();
 					pageViewSets.add(pv);
-					sdetail.pageViewSets = pageViewSets;
-					sdetail.setVelocity(ga_pageview);
+					sdetail.setPageViewSets(pageViewSets);
+					sdetail.setLastUpdatedDate(ga_retrievaldate.getTime());
+					
+					double timeDifference = getTimeInApp(ga_retrievaldate);
+					int velocity = calculateVelocity(pageViewSets, timeDifference);
+					sdetail.setVelocity(velocity);
 					
 			   }
 			   else
@@ -412,17 +477,29 @@ StoryService {
 				   //timeInApp = "15 mins";
 				   //trendfifteenmins = 25;
 				   int velocity = 0;
+				   int totalPageViews = 0;
 
 				   sdetail.setKey(key);
 				   PageView pv = new PageView(ga_retrievaldate, ga_pageview);
-				   sdetail.pageViewSets.add(pv);
+				   pv.setStoryDetailId(ga_storyName);
+				   sdetail.addPageViewSet(pv);
 				   
-				   for (int i = 0; i < sdetail.pageViewSets.size(); i++)
+				   List<PageView> pageViewSets = (List<PageView>) sdetail.getPageViewSets();
+				   
+				   for (int i = 0; i < sdetail.getPageViewSets().size(); i++)
 				   {
-					  PageView pvi =  (PageView)sdetail.pageViewSets.get(i);
-					  velocity += pvi.getPageviews();
+					  PageView pvi =  (PageView)sdetail.getPageViewSets().get(i);
+					  totalPageViews += pvi.getPageviews();
 				   }
 				   sdetail.setVelocity(velocity);
+				   sdetail.setLastUpdatedDate(ga_retrievaldate.getTime());
+				   
+				   sdetail.setPageViewSets(pageViewSets);
+					
+					double timeDifference = getTimeInApp(ga_retrievaldate);
+					velocity = calculateVelocity(pageViewSets, timeDifference);
+					sdetail.setVelocity(velocity);
+	
 				   
 			   }
 						
@@ -443,6 +520,10 @@ StoryService {
 		return true;
 	}
 	
+
+	// this method is designed to search the storydetail and page view tables for information about a record.....
+	// 
+	// 
 	public StoryDetail getStoryDetailById(String storyId) {
 		 PersistenceManager pm = PMF.get().getPersistenceManager();
 		 org.ap.storyvelocity.server.StoryDetail storyDetailResult = null;
@@ -462,6 +543,18 @@ StoryService {
 
 			  if (storyDetailResult == null)
 	    	    return null;
+			  
+			  
+	    	  Query q1 = pm.newQuery(PageView.class, "storyDetailId == storyIdParam");
+	    	  q1.declareParameters("String storyIdParam");
+	    	  q1.setOrdering("pageViewDate desc");
+	    	  List<PageView> pageViewSets = (List<PageView>) q1.execute(storyId);
+	    	  
+	    	  if (pageViewSets != null && pageViewSets.size() > 0)
+	    	  {
+	    	    storyDetailResult.setPageViewSets(pageViewSets);
+	    	  }
+
 			  
 	      } finally {
 	          pm.close();

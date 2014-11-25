@@ -6,6 +6,16 @@
          xmlns="http://java.sun.com/xml/ns/javaee">
 
   <!-- Servlets -->
+ <servlet>
+  <servlet-name>GAEJCronServlet</servlet-name>
+  <servlet-class>org.ap.storyvelocity.server.GAEJCronServlet</servlet-class>
+</servlet>
+
+<servlet-mapping>
+  <servlet-name>GAEJCronServlet</servlet-name>
+  <url-pattern>/ap_story_velocity_dashboard/cronservlet</url-pattern>
+</servlet-mapping>
+  
   <!-- Servlets -->
   <servlet>
     <servlet-name>loginService</servlet-name>

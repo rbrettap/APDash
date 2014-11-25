@@ -1,5 +1,8 @@
 package org.ap.storyvelocity.client;
 
+import com.arcadiacharts.charts.ChartException;
+import com.arcadiacharts.charts.linechart.ACLineChart;
+import com.arcadiacharts.charts.linechart.ACLineChartBuilder;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
@@ -7,8 +10,10 @@ import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.ui.AbsolutePanel;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.PopupPanel;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.FlexTable;
@@ -45,6 +50,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		private FlexTable storyFlexTable;
 		private HorizontalPanel addPanel;
 		private HorizontalPanel feedIngesterPanel;
+		private HorizontalPanel chartPanel;
 		private TextBox newSymbolTextBox;
 		private Button addButton;
 		private Button feedIngesterButton;
@@ -62,6 +68,53 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 	    private Anchor signInLink = new Anchor("Sign In");
 	    private Anchor signOutLink = new Anchor("Sign Out");
 	    private final StoryServiceAsync storyService = GWT.create(StoryService.class);
+	    
+	    private static class MyPopup extends PopupPanel {
+
+	        public MyPopup() {
+	          // PopupPanel's constructor takes 'auto-hide' as its boolean parameter.
+	          // If this is set, the panel closes itself automatically when the user
+	          // clicks outside of it.
+	          super(true);
+
+	          // PopupPanel is a SimplePanel, so you have to set it's widget property to
+	          // whatever you want its contents to be.
+			    String  myData = "Time,Max Page Views, Min Page Views, Velocity\n"+
+			            "12, 26.7, 18.7, 90.2\n"+
+			            "1, 26.9, 18.6, 56.1\n"+
+			            "2, 27.6, 19.6, 55.9\n"+
+			            "3, 28.2, 20.4, 39.1\n"+
+			            "4, 29.3, 21.3, 28\n"+
+			            "5, 30.3, 22.3, 12.7\n"+
+			            "6, 30.8, 23.1, 15\n"+
+			            "7, 31.5, 23.4, 11.2\n"+
+			            "8, 31.4, 23.1, 19.8\n"+
+			            "9, 30.5, 22.4, 57.9\n"+
+			            "10, 28.9, 21.3, 76.2\n"+
+			            "11, 27.3, 19.4, 96.5\n";
+			  
+			    ACLineChart chart;
+			    
+			    try {
+					   chart =  new ACLineChartBuilder()
+			    	    .setWidth(400)
+			    	    .setHeight(250)
+			            .setTitle("Story Velocity")
+			            .setData(myData)
+			            .build();
+					   
+					    HorizontalPanel chartPanel = new HorizontalPanel();
+					    setWidget(chartPanel);
+					    chartPanel.add( chart );
+					     
+					    chart.setDone( true ); 
+					    
+			    } catch (ChartException e) {
+			        e.printStackTrace();
+			    }
+			    
+	        }
+	      }
 	    
 	    public void onModuleLoad() {
 	        // Check login status using login service.
@@ -99,9 +152,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			{
 				mainPanel = new VerticalPanel();
 				mainPanel.add(signOutLink);
-				
-
-				rootPanel.add(mainPanel, 5, 5);
+			    rootPanel.add(mainPanel, 5, 5);
 				mainPanel.setSize("440px", "290px");
 				{
 					image = new Image("aplogo.png");
@@ -190,44 +241,13 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 				}
 			}
 			
-			// add default stories
-			//addStoryToDatabase("STORY1");
-			//String[] storyIds = new String[]{"STORY1", "STORY2", "STORY3", "STORY4", "STORY5", "STORY6",
-			//	"STORY7", "STORY8", "STORY9", "STORY10"};
-			//addStories(storyIds);
-			
-            /*
-			addStory("STORY1");			
-			addStory("STORY2");
-			addStory("STORY3");
-			addStory("STORY4");
-			addStory("STORY5");
-			addStory("STORY6");
-			addStory("STORY7");
-			addStory("STORY8");
-			addStory("STORY9");
-			addStory("STORY10");
-			*/
-			
-			/*
-			addDefaultStories("STORY1");
-			addDefaultStories("STORY2");
-			addDefaultStories("STORY3");
-			addDefaultStories("STORY4");
-			addDefaultStories("STORY5");
-			addDefaultStories("STORY6");
-			addDefaultStories("STORY7");
-			addDefaultStories("STORY8");
-			addDefaultStories("STORY9");
-			addDefaultStories("STORY10");
-			*/
 			getStoryDetailsByBulk(10);
 			
 			// setup timer to refresh list automatically
 			Timer refreshTimer = new Timer() {
 				public void run()
 				{
-					refreshWatchListAfter5Mins();
+					refreshWatchListAfter15Mins();
 					//refreshWatchList();
 				}
 			};
@@ -236,7 +256,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			
 		}
 		
-		private void refreshWatchListAfter5Mins() {
+		private void refreshWatchListAfter15Mins() {
 	
 			//StoryDetailClient[] pVes = new StoryDetailClient[stories.size()];
 			//getStoryDetails("STORY1");
@@ -330,14 +350,6 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		}
 
 		private void updateTable(StoryDetailClient storyPageView, int rowCount) {
-			// make sure the stock is still in our watch list
-			/*  fix this
-			 * if (!stories.contains(storyPageView.getStoryId()))
-			{
-				return;
-			}
-			*/
-
 			int row = rowCount + 1;
 			
 			storyFlexTable.setText(row, 0, storyPageView.getStoryId());
@@ -348,6 +360,27 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			storyFlexTable.getCellFormatter().addStyleName(row, 4, "watchListNumericColumn");
 			storyFlexTable.getCellFormatter().addStyleName(row, 5, "watchListNumericColumn");
 			storyFlexTable.getCellFormatter().addStyleName(row, 6, "watchListNumericColumn");
+			
+		    // add button to remove this stock from the list
+		    Button trendButton = new Button("Chart");
+		    trendButton.addStyleDependentName("trend");
+		    trendButton.addClickHandler(new ClickHandler() {
+		    public void onClick(ClickEvent event) {					
+		    	
+		    	final MyPopup popup = new MyPopup();
+		    	
+		    	 popup.setPopupPositionAndShow(new PopupPanel.PositionCallback() {
+		             public void setPosition(int offsetWidth, int offsetHeight) {
+		               int left = (Window.getClientWidth() - offsetWidth) / 3;
+		               int top = (Window.getClientHeight() - offsetHeight) / 3;
+		               popup.setPopupPosition(left, top);
+		             }
+		           });
+		    }
+		    });
+			
+		    storyFlexTable.setWidget(row, 6, trendButton);
+		    
 			storyFlexTable.getCellFormatter().addStyleName(row, 7, "watchListRemoveColumn");	
 			
 		    // add button to remove this stock from the list
@@ -498,6 +531,8 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 	}
 	
 
+	// the main function to populate the grid table in bulk (10 items)
+    // from the database....
 	private void getStoryDetailsByBulk(final int numResults) {
 			
 		storyService.getStoryDetailsInBulk(numResults, new AsyncCallback<List<StoryDetailClient>>() {
