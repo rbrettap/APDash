@@ -39,12 +39,18 @@ public class StoryDetail implements Serializable
 	private long lastUpdatedDate;
 	@Persistent
 	private String timeInApp;
-	@NotPersistent
+	@Persistent
 	private int velocity;
 	@Persistent
 	private int trendfifteenmins;
 	@Persistent
 	private String active;
+	@Persistent
+	private String storyItemId;
+	@Persistent
+	private String slug;
+	@Persistent
+	private String author;
 	
 	@Persistent
 	@Unowned
@@ -144,5 +150,29 @@ public class StoryDetail implements Serializable
 
 	public void setActive(String active) {
 		this.active = active;
+	}
+	
+	public String getStoryItemId() {
+		return storyItemId;
+	}
+
+	public void setStoryItemId(String storyItemId) {
+		this.storyItemId = storyItemId;
+	}
+	
+	public String getSlug() {
+		return slug;
+	}
+
+	public void setSlug(String slug) {
+		this.slug = slug;
+	}
+	
+	public String getAuthor() {
+		return author;
+	}
+
+	public void setAuthor(String author) {
+		this.author = author;
 	}
 }

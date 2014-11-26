@@ -50,7 +50,6 @@ StoryService {
 		checkLoggedIn();
 		 
 		PersistenceManager pm = PMF.get().getPersistenceManager();
-	     javax.jdo.Transaction tx = pm.currentTransaction();
 		
 		try {
 
@@ -83,15 +82,9 @@ StoryService {
 			pageViewSets.add(pv1);
 			e.setPageViewSets(pageViewSets);
 			
-			
-			tx.begin();
 		    pm.makePersistent(e);
-		    tx.commit();
 		    
 		} finally {
-			if (tx.isActive()) {
-				tx.rollback();
-		    }
 			pm.close();
 		}
 	}
@@ -102,7 +95,6 @@ StoryService {
 		checkLoggedIn();
 		 
 		PersistenceManager pm = PMF.get().getPersistenceManager();
-	     javax.jdo.Transaction tx = pm.currentTransaction();
 		
 		try {
 			
@@ -138,16 +130,10 @@ StoryService {
 			pageViewSets.add(pv1);
 			e.setPageViewSets(pageViewSets);
 			
-			
-			  tx.begin();
 		      pm.makePersistent(e);
-		      tx.commit();
 			}
 		    
 		} finally {
-			if (tx.isActive()) {
-				tx.rollback();
-		    }
 			pm.close();
 		}
 	}
@@ -156,15 +142,15 @@ StoryService {
 	public void addStory(String storyId) throws NotLoggedInException {
 		checkLoggedIn();
 		PersistenceManager pm = PMF.get().getPersistenceManager();
-		 javax.jdo.Transaction tx = pm.currentTransaction();
+		 //javax.jdo.Transaction tx = pm.currentTransaction();
 		try {
-			tx.begin();	
+			//tx.begin();	
 		  pm.makePersistent(new Story(getUser(), storyId));
-		  tx.commit();
+		  //tx.commit();
 		} finally {
-	        if (tx.isActive()) {
-	            tx.rollback();
-	        }
+	        //if (tx.isActive()) {
+	        //    tx.rollback();
+	        //}
 	        pm.close();
 		}
 	}
@@ -237,8 +223,8 @@ StoryService {
 	    	  //Key key = KeyFactory.createKey(StoryDetail.class.getSimpleName(), storyId);
 			  //org.ap.storyvelocity.server.StoryDetail e = pm.getObjectById(org.ap.storyvelocity.server.StoryDetail.class, key);
 	    	  Query q = pm.newQuery(StoryDetail.class);
-	    	  q.setOrdering("pubDate desc");
-	    	  q.setRange(0, 10);
+	    	  q.setOrdering("velocity desc");
+	    	  q.setRange(0, 15);
 	    	  List<StoryDetail> results = (List<StoryDetail>) q.execute();
 	    	  
 	    	
@@ -271,7 +257,7 @@ StoryService {
 	                             pubDate = pv.getPageViewDate();
 	   					}
 	   					
-	   					double timeDifference = getTimeInApp(pubDate);
+	   					double timeDifference = getTimeInApp(pubDate);	   					
 	   					String timeInApp = timeDifference + " mins";
 						sd.setTimeInApp(timeInApp);
 						
@@ -333,6 +319,10 @@ StoryService {
 		today = cal.getTime();
 		timeDifference = (double)((today.getTime() - pubDate.getTime())/(1000*60));
 		
+		// make sure time difference is always at least 1min to not skew velocity
+		if (timeDifference < 1.0)
+			timeDifference = 1.0;
+		
 		return timeDifference;
 	}
 	
@@ -358,7 +348,7 @@ StoryService {
 	public void removeStory(String storyId) throws NotLoggedInException {
 	    checkLoggedIn();
 	    PersistenceManager pm = PMF.get().getPersistenceManager();
-	    javax.jdo.Transaction tx = pm.currentTransaction();
+	    //javax.jdo.Transaction tx = pm.currentTransaction();
 	    try {
 	      long deleteCount = 0;
 	      Query q = pm.newQuery(Story.class, "user == u");
@@ -434,13 +424,14 @@ StoryService {
 	// this method is designed to retrieve the real time GA data and store into the 
 	// datastore
 	public boolean addGADetailsToServer() throws NotLoggedInException {
-		PersistenceManager pm = PMF.get().getPersistenceManager();
-	     javax.jdo.Transaction tx = pm.currentTransaction();
-		
-		try {
 			
 			for (String keyEntryMap: StoryAnalyticsAPI.getInstance().gaDataMap.keySet())
 			{
+    			PersistenceManager pm = PMF.get().getPersistenceManager();
+	    	    //javax.jdo.Transaction tx = pm.currentTransaction();
+
+				try {
+					
 			   Key key = KeyFactory.createKey(StoryDetail.class.getSimpleName(), keyEntryMap);
 			   
 			   String active = "YES";
@@ -465,6 +456,9 @@ StoryService {
 					pageViewSets.add(pv);
 					sdetail.setPageViewSets(pageViewSets);
 					sdetail.setLastUpdatedDate(ga_retrievaldate.getTime());
+					sdetail.setStoryItemId("");
+					sdetail.setSlug("");
+					sdetail.setAuthor("");
 					
 					double timeDifference = getTimeInApp(ga_retrievaldate);
 					int velocity = calculateVelocity(pageViewSets, timeDifference);
@@ -491,7 +485,6 @@ StoryService {
 					  PageView pvi =  (PageView)sdetail.getPageViewSets().get(i);
 					  totalPageViews += pvi.getPageviews();
 				   }
-				   sdetail.setVelocity(velocity);
 				   sdetail.setLastUpdatedDate(ga_retrievaldate.getTime());
 				   
 				   sdetail.setPageViewSets(pageViewSets);
@@ -503,20 +496,21 @@ StoryService {
 				   
 			   }
 						
-			  tx.begin();
+			  //tx.begin();
 		      pm.makePersistent(sdetail);
-		      tx.commit();
+		      //tx.commit();
 		      
 		      // after it's done should clear hashmap and flag inProgress ....
+				} finally {
+					//if (tx.isActive()) {
+					//	tx.rollback();
+				    //}
+					pm.close();
+				}
 		      
 			}
 		    
-		} finally {
-			if (tx.isActive()) {
-				tx.rollback();
-		    }
-			pm.close();
-		}
+
 		return true;
 	}
 	
