@@ -10,10 +10,14 @@
   <servlet-name>GAEJCronServlet</servlet-name>
   <servlet-class>org.ap.storyvelocity.server.GAEJCronServlet</servlet-class>
 </servlet>
-
+ <servlet>
+  <servlet-name>GAEDeleteRecordsCronServlet</servlet-name>
+  <servlet-class>org.ap.storyvelocity.server.GAEDeleteRecordsCronServlet</servlet-class>
+</servlet>
+ 
 <servlet-mapping>
-  <servlet-name>GAEJCronServlet</servlet-name>
-  <url-pattern>/ap_story_velocity_dashboard/cronservlet</url-pattern>
+  <servlet-name>GAEDeleteRecordsCronServlet</servlet-name>
+  <url-pattern>/ap_story_velocity_dashboard/deletecronservlet</url-pattern>
 </servlet-mapping>
   
   <!-- Servlets -->

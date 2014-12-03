@@ -614,21 +614,21 @@ StoryService {
 			} // end-for loop
 			
 			// should make the total number processed..
-			updatedStoryIngestionTable(recordsProcessed);
+			updatedStoryIngestionTable(recordsProcessed, 1);
 		    
 
 		return true;
 	}
 	
 	
-	public void updatedStoryIngestionTable(int numStories) {
+	public void updatedStoryIngestionTable(int numStories, int action) {
 		 PersistenceManager pm = PMF.get().getPersistenceManager();
 
 	      try {
 		        
 	    	  Date pubDate = new Date();
 	    	  long pubDateKey = pubDate.getTime();
-	    	  StoryIngestion storyingestion = new StoryIngestion(pubDate, numStories);
+	    	  StoryIngestion storyingestion = new StoryIngestion(pubDate, numStories, action);
 	    	  //Key key = KeyFactory.createKey(StoryIngestion.class.getSimpleName(), pubDateKey);
 	    	  pm.makePersistent(storyingestion);
 			  
@@ -678,6 +678,79 @@ StoryService {
 	          pm.close();
 	      }
 		  return storyDetailResult;	      
+	}
+	
+	
+	public int deleteOldRecordsFromServer()  {
+		
+		int numRecordsDeleted = 0;
+		
+		numRecordsDeleted = removeRecordsFromServer();
+		
+		return numRecordsDeleted;
+
+	}
+	
+	
+	// this method is designed to remove the old pageviews and records from the db
+	public int removeRecordsFromServer()  {
+			
+	        int recordsProcessed = 0;
+	        
+			Date today = new Date();
+			Calendar cal = Calendar.getInstance();
+			today = cal.getTime();
+			
+			Date previous = new Date();
+			Calendar cal2 = Calendar.getInstance();
+			cal2.setTime(previous);
+			int hours = cal2.get(Calendar.HOUR_OF_DAY);
+			hours -= 36;
+			cal2.set(Calendar.HOUR_OF_DAY, hours);
+			previous = cal2.getTime();
+			// previous should be the time 36 hours ago.....
+			
+			PersistenceManager pm = PMF.get().getPersistenceManager();
+			org.ap.storyvelocity.server.StoryDetail storyDetailResult = null;
+			List<StoryDetail> storyIds = new ArrayList<StoryDetail>();
+
+		      try {
+			        
+		    	  Query q = pm.newQuery(StoryDetail.class,  "pubDate < pubDateParam");
+		    	  q.declareParameters("long pubDateParam");
+		    	  List<StoryDetail> results = (List<StoryDetail>) q.execute(previous.getTime());
+		    	
+		    	    for (StoryDetail sd : results) {
+		    		   Key key = KeyFactory.createKey(StoryDetail.class.getSimpleName(), sd.getStoryId());
+		    		   sd.setKey(key);
+		    		   sd = pm.getObjectById(org.ap.storyvelocity.server.StoryDetail.class, key);
+		    		   
+		 	    	 
+		    		    Query q1 = pm.newQuery(PageView.class, "storyDetailId == storyIdParam");
+			    	    q1.declareParameters("String storyIdParam");
+			    	    List<PageView> pageViewSets = (List<PageView>) q1.execute(sd.getStoryId());
+			    	    
+			    	    for (PageView pv : pageViewSets) {
+			    	    	
+			    	    	pm.deletePersistent(pv); 
+			    	    }
+				    	
+		    		   pm.deletePersistent(sd); 
+		    		   recordsProcessed++;
+		    	  }
+		      }
+		      catch(Exception ex)
+		      {
+			
+		      } finally {
+					pm.close();
+			  }
+		      
+			// should make the total number processed..
+			updatedStoryIngestionTable(recordsProcessed, -1);
+		    
+
+		return recordsProcessed;
 	}
 
 }

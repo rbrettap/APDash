@@ -23,15 +23,18 @@ public class StoryIngestion
 	private int storycount;
 	@Persistent
 	private Date storyingestiondate;
+	@Persistent
+	private int action;
 
 	public StoryIngestion()
 	{
 	}
 
-	public StoryIngestion(Date storyingestiondate, int storycount)
+	public StoryIngestion(Date storyingestiondate, int storycount, int action)
 	{
 		this.storyingestiondate = storyingestiondate;
 		this.storycount = storycount;
+		this.action = action;
 	}
 
 	public Key getKey() {
@@ -59,5 +62,12 @@ public class StoryIngestion
 		this.storycount = storycount;
 	}
 
+	public int getAction() {
+		return action;
+	}
+
+	public void setAction(int action) {
+		this.action = action;
+	}
 
 }
