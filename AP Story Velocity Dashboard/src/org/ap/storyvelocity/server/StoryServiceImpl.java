@@ -706,6 +706,7 @@ StoryService {
 			cal2.setTime(previous);
 			int hours = cal2.get(Calendar.HOUR_OF_DAY);
 			hours -= 36;
+			//hours -= 136;
 			cal2.set(Calendar.HOUR_OF_DAY, hours);
 			previous = cal2.getTime();
 			// previous should be the time 36 hours ago.....
@@ -713,6 +714,8 @@ StoryService {
 			PersistenceManager pm = PMF.get().getPersistenceManager();
 			org.ap.storyvelocity.server.StoryDetail storyDetailResult = null;
 			List<StoryDetail> storyIds = new ArrayList<StoryDetail>();
+			
+			int deleteCountLimit = 25;
 
 		      try {
 			        
@@ -721,6 +724,10 @@ StoryService {
 		    	  List<StoryDetail> results = (List<StoryDetail>) q.execute(previous.getTime());
 		    	
 		    	    for (StoryDetail sd : results) {
+		    	    
+		    	       if (recordsProcessed > deleteCountLimit)
+		    	       		break;
+		    	    	
 		    		   Key key = KeyFactory.createKey(StoryDetail.class.getSimpleName(), sd.getStoryId());
 		    		   sd.setKey(key);
 		    		   sd = pm.getObjectById(org.ap.storyvelocity.server.StoryDetail.class, key);
