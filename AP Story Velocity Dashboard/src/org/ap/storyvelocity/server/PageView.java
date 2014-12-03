@@ -13,7 +13,7 @@ import com.google.appengine.api.datastore.Key;
 
 
 @PersistenceCapable
-public class PageView
+public class PageView implements Comparable<PageView>
 {
 	@PrimaryKey
 	@Persistent(valueStrategy = IdGeneratorStrategy.IDENTITY)
@@ -81,5 +81,18 @@ public class PageView
 
 	public void setPageviews(int pageviews) {
 		this.pageviews = pageviews;
+	}
+
+	@Override
+	public int compareTo(PageView o) {
+		// TODO Auto-generated method stub
+		if (pageViewDate.before(o.pageViewDate)) {
+			return -1;
+			
+		}
+		if (pageViewDate.after(o.pageViewDate)) {
+			return 1;
+		}
+		return 0;		
 	}
 }

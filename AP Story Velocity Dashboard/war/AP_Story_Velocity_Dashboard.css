@@ -309,6 +309,7 @@ a:visited {
 	font-style: italic;
 	text-align: center;
 	background-color: #2062B8;
+	width: 100px;
 }
 
 /* stock list flex table */
@@ -316,12 +317,18 @@ a:visited {
 	margin-bottom: 6px;
 	padding: 2px;
 	border: 1px solid silver;
+	width: 1250px;
 }
 
 /* stock list Price and Change fields */
 .watchListNumericColumn {
-  text-align: right;
-  width:8em;
+  text-align: center;
+  width:20em;
+}
+
+.watchListTextColumn {
+  text-align: center;
+  width:200px;
 }
 
 /* stock list Remove column */

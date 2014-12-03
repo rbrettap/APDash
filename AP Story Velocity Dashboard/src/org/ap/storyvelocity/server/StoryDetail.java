@@ -42,6 +42,8 @@ public class StoryDetail implements Serializable
 	@Persistent
 	private int velocity;
 	@Persistent
+	private int totalPageViews;
+	@Persistent
 	private int trendfifteenmins;
 	@Persistent
 	private String active;
@@ -134,6 +136,14 @@ public class StoryDetail implements Serializable
 
 	public void setVelocity(int velocity) {
 		this.velocity = velocity;
+	}
+	
+	public int getTotalPageViews() {
+		return totalPageViews;
+	}
+
+	public void setTotalPageViews(int totalPageViews) {
+		this.totalPageViews = totalPageViews;
 	}
 	
 	public int getTrendFifteenMins() {

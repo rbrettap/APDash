@@ -13,6 +13,8 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.AbsolutePanel;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.InlineHTML;
+import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.PopupPanel;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
@@ -51,15 +53,22 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		private HorizontalPanel addPanel;
 		private HorizontalPanel feedIngesterPanel;
 		private HorizontalPanel chartPanel;
-		private TextBox newSymbolTextBox;
+		private TextBox numStoryTextBox;
 		private Button addButton;
 		private Button feedIngesterButton;
+		private Button fetchByVelocity;
+		private Button fetchByTotalPageView;
+		private Button fetchByTimeInApp;
+		private Button fetchByPubDate;
+		private ListBox listBox;
 		private Label lastUpdatedLabel;
 		private Label lastFetchedLabel;
 		private ArrayList <String> stories = new ArrayList<String>();  
 		private static final int REFRESH_INTERVAL = 60000;
 		private Image image;
 		private Label lblStoryWatcher;
+		
+		private int numStoryCount = 10;
 		
 	    private LoginInfo loginInfo = null;
 		private VerticalPanel loginPanel = new VerticalPanel();
@@ -68,53 +77,6 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 	    private Anchor signInLink = new Anchor("Sign In");
 	    private Anchor signOutLink = new Anchor("Sign Out");
 	    private final StoryServiceAsync storyService = GWT.create(StoryService.class);
-	    
-	    private static class MyPopup extends PopupPanel {
-
-	        public MyPopup() {
-	          // PopupPanel's constructor takes 'auto-hide' as its boolean parameter.
-	          // If this is set, the panel closes itself automatically when the user
-	          // clicks outside of it.
-	          super(true);
-
-	          // PopupPanel is a SimplePanel, so you have to set it's widget property to
-	          // whatever you want its contents to be.
-			    String  myData = "Time,Max Page Views, Min Page Views, Velocity\n"+
-			            "12, 26.7, 18.7, 90.2\n"+
-			            "1, 26.9, 18.6, 56.1\n"+
-			            "2, 27.6, 19.6, 55.9\n"+
-			            "3, 28.2, 20.4, 39.1\n"+
-			            "4, 29.3, 21.3, 28\n"+
-			            "5, 30.3, 22.3, 12.7\n"+
-			            "6, 30.8, 23.1, 15\n"+
-			            "7, 31.5, 23.4, 11.2\n"+
-			            "8, 31.4, 23.1, 19.8\n"+
-			            "9, 30.5, 22.4, 57.9\n"+
-			            "10, 28.9, 21.3, 76.2\n"+
-			            "11, 27.3, 19.4, 96.5\n";
-			  
-			    ACLineChart chart;
-			    
-			    try {
-					   chart =  new ACLineChartBuilder()
-			    	    .setWidth(400)
-			    	    .setHeight(250)
-			            .setTitle("Story Velocity")
-			            .setData(myData)
-			            .build();
-					   
-					    HorizontalPanel chartPanel = new HorizontalPanel();
-					    setWidget(chartPanel);
-					    chartPanel.add( chart );
-					     
-					    chart.setDone( true ); 
-					    
-			    } catch (ChartException e) {
-			        e.printStackTrace();
-			    }
-			    
-	        }
-	      }
 	    
 	    public void onModuleLoad() {
 	        // Check login status using login service.
@@ -153,7 +115,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 				mainPanel = new VerticalPanel();
 				mainPanel.add(signOutLink);
 			    rootPanel.add(mainPanel, 5, 5);
-				mainPanel.setSize("440px", "290px");
+				mainPanel.setSize("700px", "290px");
 				{
 					image = new Image("aplogo.png");
 					mainPanel.add(image);
@@ -165,10 +127,55 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 					mainPanel.add(lblStoryWatcher);
 				}
 				
+				addPanel = new HorizontalPanel();
+				addPanel.addStyleName("addPanel");
+				mainPanel.add(addPanel);
+				{
+					//private Button fetchByTotalPageView;
+					//private Button fetchByTimeInApp;
+					//private Button fetchByPubDate;
+					
+
+
+					/*
+						numStoryTextBox = new TextBox();
+						numStoryTextBox.addKeyPressHandler(new KeyPressHandler() {
+							public void onKeyPress(KeyPressEvent event) {
+								if (event.getCharCode() == KeyCodes.KEY_ENTER){
+									updateFetchFilter();
+								}
+							}
+						});
+						numStoryTextBox.setFocus(true);
+						addPanel.add(numStoryTextBox);
+						//addPanel.add(new InlineHTML(" "));
+						listBox = new ListBox();
+						listBox.addItem("velocity");
+						listBox.addItem("pubDate");
+						listBox.addItem("pageViews");
+
+					    // Make enough room for all five items (setting this value to 1 turns it
+					    // into a drop-down list).
+						listBox.setVisibleItemCount(3);
+						addPanel.add(listBox);
+						//addPanel.add(new InlineHTML(" "));
+						addButton = new Button("Update Fetch Filter");
+						addButton.setStyleName("gwt-Button-Add");
+						addButton.addClickHandler(new ClickHandler() {
+							public void onClick(ClickEvent event) {
+								updateFetchFilter();
+							}
+						});
+						addButton.setText("Update Story Filter");
+						addPanel.add(addButton);
+						*/
+				}
+				
 				feedIngesterPanel = new HorizontalPanel();
 				feedIngesterPanel.addStyleName("addPanel");
 				mainPanel.add(feedIngesterPanel);				
 				{
+
 					feedIngesterButton = new Button("Get Realtime Data");
 					feedIngesterButton.setStyleName("gwt-Button-Add");
 					feedIngesterButton.addClickHandler(new ClickHandler() {
@@ -178,70 +185,83 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 					});
 					feedIngesterButton.setText("Start Fetching Realtime Data");
 					feedIngesterPanel.add(feedIngesterButton);
-					lastFetchedLabel = new Label("  Last fetch was at: ");
+					lastFetchedLabel = new Label("  ");
 					feedIngesterPanel.add(lastFetchedLabel);
+					feedIngesterPanel.add(new InlineHTML("    "));
+					
+					
+					fetchByVelocity = new Button("FetchByVelocity");
+					fetchByVelocity.setStyleName("gwt-Button-Add");
+					fetchByVelocity.addClickHandler(new ClickHandler() {
+						public void onClick(ClickEvent event) {
+							Date firstFetchTime = new Date();
+							// initial sort type should be by velocity
+							getStoryDetailsByBulk(numStoryCount, 0, firstFetchTime.getTime());
+						}
+					});
+					fetchByVelocity.setText("FetchByVelocity");
+					feedIngesterPanel.add(fetchByVelocity);
+					feedIngesterPanel.add(new InlineHTML("    "));
+					
+					fetchByPubDate = new Button("fetchByPubDate");
+					fetchByPubDate.setStyleName("gwt-Button-Add");
+					fetchByPubDate.addClickHandler(new ClickHandler() {
+						public void onClick(ClickEvent event) {
+							Date firstFetchTime = new Date();
+							// initial sort type should be by velocity
+							getStoryDetailsByBulk(numStoryCount, 1, firstFetchTime.getTime());
+						}
+					});
+					fetchByPubDate.setText("fetchByPubDate");
+					feedIngesterPanel.add(fetchByPubDate);
+					
+					fetchByTotalPageView = new Button("fetchByTotalPageView");
+					fetchByTotalPageView.setStyleName("gwt-Button-Add");
+					fetchByTotalPageView.addClickHandler(new ClickHandler() {
+						public void onClick(ClickEvent event) {
+							Date firstFetchTime = new Date();
+							// initial sort type should be by velocity
+							getStoryDetailsByBulk(numStoryCount, 2, firstFetchTime.getTime());
+						}
+					});
+					fetchByTotalPageView.setText("fetchByTotalPageView");
+					feedIngesterPanel.add(fetchByTotalPageView);
+					feedIngesterPanel.add(new InlineHTML("    "));
 				}
+				
+				
 				{
 					storyFlexTable = new FlexTable();
 					//Add these lines
-					storyFlexTable.setText(0, 0, "Story");
-					storyFlexTable.setText(0, 1, "Publish_Date");
-					storyFlexTable.setText(0, 2, "TimeInApp");
+					storyFlexTable.setText(0, 0, "Story Title");
+					storyFlexTable.setText(0, 1, "Pub Date");
+					storyFlexTable.setText(0, 2, "Time In App");
 					storyFlexTable.setText(0, 3, "Total PageViews");
-					storyFlexTable.setText(0, 4, "Velocity");
+					storyFlexTable.setText(0, 4, "Velocity = Est. PageViews/hr.");
 					storyFlexTable.setText(0, 5, "PVs_Last_15_mins");
-					storyFlexTable.setText(0, 6, "Trend");
-					storyFlexTable.setText(0, 7, "Active");
+					storyFlexTable.setText(0, 6, "Chart/Trend");
+					//storyFlexTable.setText(0, 7, "Active");
 					
 					// Add styles to elements in the stock list table.
 					storyFlexTable.setCellPadding(6);
 				    storyFlexTable.getRowFormatter().addStyleName(0, "watchListHeader");
 				    storyFlexTable.addStyleName("watchList");
+				    storyFlexTable.getCellFormatter().addStyleName(0, 0, "watchListNumericColumn");
 				    storyFlexTable.getCellFormatter().addStyleName(0, 1, "watchListNumericColumn");
 				    storyFlexTable.getCellFormatter().addStyleName(0, 2, "watchListNumericColumn");
 				    storyFlexTable.getCellFormatter().addStyleName(0, 3, "watchListNumericColumn");
 				    storyFlexTable.getCellFormatter().addStyleName(0, 4, "watchListNumericColumn");
 				    storyFlexTable.getCellFormatter().addStyleName(0, 5, "watchListNumericColumn");
 				    storyFlexTable.getCellFormatter().addStyleName(0, 6, "watchListNumericColumn");
-				    storyFlexTable.getCellFormatter().addStyleName(0, 7, "watchListRemoveColumn");
+				    //storyFlexTable.getCellFormatter().addStyleName(0, 7, "watchListRemoveColumn");
 				    
 					mainPanel.add(storyFlexTable);
 				}
-				{
-					addPanel = new HorizontalPanel();
-					addPanel.addStyleName("addPanel");
-					mainPanel.add(addPanel);
-					{
-						newSymbolTextBox = new TextBox();
-						newSymbolTextBox.addKeyPressHandler(new KeyPressHandler() {
-							public void onKeyPress(KeyPressEvent event) {
-								if (event.getCharCode() == KeyCodes.KEY_ENTER){
-									addStoryName();
-								}
-							}
-						});
-						newSymbolTextBox.setFocus(true);
-						addPanel.add(newSymbolTextBox);
-					}
-					{
-						addButton = new Button("New button");
-						addButton.setStyleName("gwt-Button-Add");
-						addButton.addClickHandler(new ClickHandler() {
-							public void onClick(ClickEvent event) {
-								addStoryName();
-							}
-						});
-						addButton.setText("Add");
-						addPanel.add(addButton);
-					}
-				}
-				{
-					lastUpdatedLabel = new Label("New label");
-					mainPanel.add(lastUpdatedLabel);
-				}
 			}
 			
-			getStoryDetailsByBulk(10);
+			Date firstFetchTime = new Date();
+			// initial sort type should be by velocity
+			getStoryDetailsByBulk(numStoryCount, 0, firstFetchTime.getTime());
 			
 			// setup timer to refresh list automatically
 			Timer refreshTimer = new Timer() {
@@ -261,6 +281,9 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			//StoryDetailClient[] pVes = new StoryDetailClient[stories.size()];
 			//getStoryDetails("STORY1");
 			//updateTable(pVes);
+			Date firstFetchTime = new Date();
+			// initial sort type should be by velocity
+			//getStoryDetailsByBulk(numStoryCount, 0, firstFetchTime.getTime());
 
 			
 		}
@@ -354,6 +377,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			
 			storyFlexTable.setText(row, 0, storyPageView.getStoryId());
 			storyFlexTable.setWidget(row, 2, new Label());
+			storyFlexTable.getCellFormatter().addStyleName(row, 0, "watchListNumericColumn");
 			storyFlexTable.getCellFormatter().addStyleName(row, 1, "watchListNumericColumn");
 			storyFlexTable.getCellFormatter().addStyleName(row, 2, "watchListNumericColumn");
 			storyFlexTable.getCellFormatter().addStyleName(row, 3, "watchListNumericColumn");
@@ -361,26 +385,10 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			storyFlexTable.getCellFormatter().addStyleName(row, 5, "watchListNumericColumn");
 			storyFlexTable.getCellFormatter().addStyleName(row, 6, "watchListNumericColumn");
 			
-		    // add button to remove this stock from the list
-		    Button trendButton = new Button("Chart");
-		    trendButton.addStyleDependentName("trend");
-		    trendButton.addClickHandler(new ClickHandler() {
-		    public void onClick(ClickEvent event) {					
-		    	
-		    	final MyPopup popup = new MyPopup();
-		    	
-		    	 popup.setPopupPositionAndShow(new PopupPanel.PositionCallback() {
-		             public void setPosition(int offsetWidth, int offsetHeight) {
-		               int left = (Window.getClientWidth() - offsetWidth) / 3;
-		               int top = (Window.getClientHeight() - offsetHeight) / 3;
-		               popup.setPopupPosition(left, top);
-		             }
-		           });
-		    }
-		    });
-			
-		    storyFlexTable.setWidget(row, 6, trendButton);
+		    HorizontalPanel chartPanel = setupChart(storyPageView);
+		    storyFlexTable.setWidget(row, 6, chartPanel);
 		    
+		    /*
 			storyFlexTable.getCellFormatter().addStyleName(row, 7, "watchListRemoveColumn");	
 			
 		    // add button to remove this stock from the list
@@ -394,12 +402,19 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		    }
 		    });
 		    storyFlexTable.setWidget(row, 7, removeStock);	
-			
+			*/
+		    
 			Date d = new Date(storyPageView.getPubDate());
 			DateTimeFormat sdf = DateTimeFormat.getFormat("MMMM dd, yyyy HH:mm aa");
 			String pubDate = sdf.format(d);
 			
+			
+			//int timeInAppInt = Integer.parseInt(storyPageView.getTimeInApp());
 			String timeInApp = storyPageView.getTimeInApp();
+			
+			// convert to hours/mins....
+			
+			
 			int velocity = storyPageView.getVelocity();
 			int trendfifteenmins = storyPageView.getTrendFifteenMins();
 			
@@ -438,51 +453,38 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 
 		    //changeWidget.setStyleName(changeStyleName);
 		}
-		private void addStoryName() {
-			final String symbol = newSymbolTextBox.getText().toUpperCase().trim();
-		    newSymbolTextBox.setFocus(true);
-
-		    // Stock code must be between 1 and 10 chars that are numbers, letters, or dots.
-		    if (!symbol.matches("^[0-9A-Z\\.]{1,10}$")) {
-		      Window.alert("'" + symbol + "' is not a valid story name.");
-		      newSymbolTextBox.selectAll();
-		      return;
-		    }
-
-		    newSymbolTextBox.setText("");
-
-		 // don't add the story if it's already in the watch list
-		    if (stories.contains(symbol))
-		        return;
-
-		    // add the stock to the list
-		    int row = storyFlexTable.getRowCount();
-		    stories.add(symbol);
-		    storyFlexTable.setText(row, 0, symbol);
-		    storyFlexTable.setWidget(row, 2, new Label());
-		    storyFlexTable.getCellFormatter().addStyleName(row, 1, "watchListNumericColumn");
-		    storyFlexTable.getCellFormatter().addStyleName(row, 2, "watchListNumericColumn");
-		    storyFlexTable.getCellFormatter().addStyleName(row, 3, "watchListNumericColumn");
-		    storyFlexTable.getCellFormatter().addStyleName(row, 4, "watchListNumericColumn");
-		    storyFlexTable.getCellFormatter().addStyleName(row, 5, "watchListNumericColumn");
-		    storyFlexTable.getCellFormatter().addStyleName(row, 6, "watchListNumericColumn");
-		    storyFlexTable.getCellFormatter().addStyleName(row, 7, "watchListRemoveColumn");
-		    
-		    // add button to remove this stock from the list
-		    Button removeStock = new Button("x");
-		    removeStock.addStyleDependentName("remove");
-		    removeStock.addClickHandler(new ClickHandler() {
-		    public void onClick(ClickEvent event) {					
-		        int removedIndex = stories.indexOf(symbol);
-		        stories.remove(removedIndex);
-		        storyFlexTable.removeRow(removedIndex + 1);
-		    }
-		    });
-		    storyFlexTable.setWidget(row, 7, removeStock);	
-			
-		}
-
 		
+		
+		// this method is to provide a basic routine for setting up charts....
+		private HorizontalPanel setupChart(StoryDetailClient storyPageView)
+		{
+			HorizontalPanel chartPanel = new HorizontalPanel();
+			
+			//List pageViewSets = storyPageView.getPageviews();
+			String data = storyPageView.pageViewTrend;			 
+			String  myData = "Time in App,Max Page Views,Velocity\n"+data;
+			
+			ACLineChart chart;
+
+			try {
+				   chart =  new ACLineChartBuilder()
+				    .setWidth(300)
+				    .setHeight(200)
+			        .setTitle("Story Velocity = Est.PageViews/Hr")
+			        .setData(myData)
+			        .build();
+				   
+				    chartPanel = new HorizontalPanel();
+				    chartPanel.add( chart );
+				    chart.setDone( true ); 
+				    
+			} catch (ChartException e) {
+			    e.printStackTrace();
+			}
+			return chartPanel;
+		}
+		
+
 		private void addDefaultStories(final String storyId) {
 
 		    // add the stock to the list
@@ -496,7 +498,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		    storyFlexTable.getCellFormatter().addStyleName(row, 4, "watchListNumericColumn");
 		    storyFlexTable.getCellFormatter().addStyleName(row, 5, "watchListNumericColumn");
 		    storyFlexTable.getCellFormatter().addStyleName(row, 6, "watchListNumericColumn");
-		    storyFlexTable.getCellFormatter().addStyleName(row, 7, "watchListRemoveColumn");
+		   /* storyFlexTable.getCellFormatter().addStyleName(row, 7, "watchListRemoveColumn");
 		    
 		    // add button to remove this stock from the list
 		    Button removeStock = new Button("x");
@@ -509,6 +511,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		    }
 		    });
 		    storyFlexTable.setWidget(row, 7, removeStock);	
+		    */
 		    
 		    // now we need to retrieve the story record from the database....
 		    getStoryDetails(storyId);
@@ -533,9 +536,9 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 
 	// the main function to populate the grid table in bulk (10 items)
     // from the database....
-	private void getStoryDetailsByBulk(final int numResults) {
+	private void getStoryDetailsByBulk(final int numResults, final int sorttype, final long lastFetchedTime) {
 			
-		storyService.getStoryDetailsInBulk(numResults, new AsyncCallback<List<StoryDetailClient>>() {
+		storyService.getStoryDetailsInBulk(numResults,  sorttype, lastFetchedTime, new AsyncCallback<List<StoryDetailClient>>() {
 		
 		public void onFailure(Throwable error) {
 		    	  
@@ -570,6 +573,29 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		    });
 	}		
 		
+		
+		private void updateFetchFilter() {
+			
+			int storyCount = Integer.parseInt(numStoryTextBox.getText().toUpperCase().trim());
+			numStoryTextBox.setFocus(true);
+
+		    // Stock code must be between 1 and 10 chars that are numbers, letters, or dots.
+		    if (storyCount < 0 && storyCount > 15) {
+		      Window.alert("'" + storyCount + "' is not a valid story count.");
+		      numStoryTextBox.selectAll();
+		      return;
+		    }
+
+		    numStoryTextBox.setText(" ");
+		    numStoryCount = storyCount; // set this to be the global story count....
+		    
+		    String searchFilter = listBox.getItemText(listBox.getSelectedIndex());
+		    
+		    
+		    
+		}
+
+			
 		
 	}
 
