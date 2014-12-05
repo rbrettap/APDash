@@ -59,4 +59,9 @@ proguard/
 
 # Flurry specific build dirs
 build_ant/
-flurryAndroidMonolithic/docs
+AP Story Velocity Dashboard/gwt-unitCache
+AP Story Velocity Dashboard/war
+AP Story Velocity Dashboard/war/WEB-INF/classes/
+APTestProject/
+TestProject/
+co.hakuna.gae.java.hserver0/
