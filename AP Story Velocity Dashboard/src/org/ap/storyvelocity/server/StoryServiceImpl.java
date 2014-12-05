@@ -31,9 +31,7 @@ import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
 
-import org.ap.storyvelocity.client.NotLoggedInException;
 import org.ap.storyvelocity.shared.StoryDetailClient;
-import org.ap.storyvelocity.client.StoryService;
 import org.ap.storyvelocity.server.StoryDetail;
 import org.ap.storyvelocity.server.PageView;
 import org.ap.storyvelocity.server.Story;
@@ -49,6 +47,8 @@ StoryService {
 	
 	private static final Logger LOG = Logger.getLogger(StoryServiceImpl.class.getName());
 	public HashMap<String, StoryDetail> storyDetailMap = new HashMap<String, StoryDetail>();
+	public HashMap<String, List<StoryDetail>> velocityStoryDetailMap = new HashMap<String, List<StoryDetail>>();
+	private static Date storyDetailMapFetch = new Date(0);
 	
 	@Override
 	public void addStoryDetail(String storyId) throws NotLoggedInException {
@@ -239,12 +239,6 @@ StoryService {
 			sortOrderString = "velocity desc";
 		}
 		
-		//private Button fetchByTotalPageView;
-		//private Button fetchByTimeInApp;
-		//private Button fetchByPubDate;
-	
-		 
-		
 		 PersistenceManager pm = PMF.get().getPersistenceManager();
 		 org.ap.storyvelocity.server.StoryDetail storyDetailResult = null;
 		 org.ap.storyvelocity.shared.StoryDetailClient storyDetailClient = null;
@@ -254,10 +248,71 @@ StoryService {
 		        
 	    	  //Key key = KeyFactory.createKey(StoryDetail.class.getSimpleName(), storyId);
 			  //org.ap.storyvelocity.server.StoryDetail e = pm.getObjectById(org.ap.storyvelocity.server.StoryDetail.class, key);
-	    	  Query q = pm.newQuery(StoryDetail.class);
-	    	  q.setOrdering(sortOrderString);
-	    	  q.setRange(0, numResults);
-	    	  List<StoryDetail> results = (List<StoryDetail>) q.execute();
+	    	  List<StoryDetail> results = null;
+
+	    	  if (!isDateYounger(storyDetailMapFetch, 3))
+	    	  {
+	    			// do the query here because the map is empty....
+	  	    	    Query q = pm.newQuery(StoryDetail.class);
+		    	    q.setOrdering(sortOrderString);
+		    	    q.setRange(0, numResults);
+		    	    results = (List<StoryDetail>) q.execute();
+	    		  
+	    			if (sorttype == 0)
+	    			{
+	    				if (velocityStoryDetailMap.containsKey("velocity"))
+	    				 velocityStoryDetailMap.remove("velocity");
+	    				
+	    				velocityStoryDetailMap.put("velocity", results);
+	    				storyDetailMapFetch = new Date();
+	    				
+	    			}
+	    			else if (sorttype == 1)
+	    			{
+	    				if (velocityStoryDetailMap.containsKey("pubDate"))
+		    				 velocityStoryDetailMap.remove("pubDate");
+	    				velocityStoryDetailMap.put("pubDate", results);
+	    				storyDetailMapFetch = new Date();
+	    			}
+	    			else if (sorttype == 2)
+	    			{
+	    				if (velocityStoryDetailMap.containsKey("totalPageViews"))
+		    				 velocityStoryDetailMap.remove("totalPageViews");
+	    				velocityStoryDetailMap.put("totalPageViews", results);
+	    				storyDetailMapFetch = new Date();
+	    			}
+	    			else if (sorttype == 3)
+	    			{
+	    				if (velocityStoryDetailMap.containsKey("velocity"))
+		    				 velocityStoryDetailMap.remove("velocity");
+	    				
+	    				velocityStoryDetailMap.put("velocity", results);
+	    				storyDetailMapFetch = new Date();
+	    			}
+	    	  }
+	    	  else
+	    	  {
+	    			if (sorttype == 0)
+	    			{
+	    				if (velocityStoryDetailMap.containsKey("velocity"))
+	    					 results = (List<StoryDetail>)(velocityStoryDetailMap.get("velocity"));
+	    			}
+	    			else if (sorttype == 1)
+	    			{
+	    				if (velocityStoryDetailMap.containsKey("pubDate"))
+	    					results = (List<StoryDetail>)(velocityStoryDetailMap.get("pubDate"));
+	    			}
+	    			else if (sorttype == 2)
+	    			{
+	    				if (velocityStoryDetailMap.containsKey("totalPageViews"))
+	    					results = (List<StoryDetail>)(velocityStoryDetailMap.get("totalPageViews"));
+	    			}
+	    			else if (sorttype == 3)
+	    			{
+	    				if (velocityStoryDetailMap.containsKey("velocity"))
+	    					results = (List<StoryDetail>)(velocityStoryDetailMap.get("velocity"));
+	    			}
+	    	  }
 	    	  
 	    	
 	    	  if (!results.isEmpty()) {
@@ -308,7 +363,7 @@ StoryService {
 	   						sb.append(relativeVelocity+"\n");
 	   						
 	   						// is pageView in the last 15 minutes.....
-	   						if (isPageViewInLast15minutes(pv.getPageViewDate()))
+	   						if (isDateYounger(pv.getPageViewDate(), 15))
 	   								totalPageViewsLast15 += pv.getPageviews();
 	   								
 	   					}
@@ -406,7 +461,7 @@ StoryService {
 	}
 	
 	// calculates whether or not the page view was in the last 15 minutes...
-	public boolean isPageViewInLast15minutes(Date pubDate)
+	public boolean isDateYounger(Date pubDate, int value)
 	{
 		double timeDifference = 0.0;
 		Date today = new Date();
@@ -414,7 +469,7 @@ StoryService {
 		today = cal.getTime();
 		timeDifference = (double)((today.getTime() - pubDate.getTime())/(1000*60));
 		
-		if (timeDifference < 15)
+		if (timeDifference < value)
 			return true;
 		
 		return false;

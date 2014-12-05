@@ -98,7 +98,7 @@ public class StoryAnalyticsAPI {
         	
         	// need to check to see if there's an existing fetch in progress - otherwise we could potentially do these calls
         	// amillion times....
-        	
+        	gaDataMap.clear();  // make sure we clear the datamap so that we don't keep doing entries.....
 
             Analytics analyticsService = setupFetchRequest();
 
