@@ -8,6 +8,8 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.KeyCodes;
+import com.google.gwt.event.dom.client.KeyDownEvent;
+import com.google.gwt.event.dom.client.KeyDownHandler;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.AbsolutePanel;
@@ -36,6 +38,7 @@ import com.google.gwt.i18n.client.NumberFormat;
 import java.util.Date;
 
 import org.ap.storyvelocity.shared.StoryDetailClient;
+import org.ap.storyvelocity.shared.Util;
 
 import com.google.gwt.user.client.ui.Image;
 
@@ -56,10 +59,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		private TextBox numStoryTextBox;
 		private Button addButton;
 		private Button feedIngesterButton;
-		private Button fetchByVelocity;
-		private Button fetchByTotalPageView;
-		private Button fetchByTimeInApp;
-		private Button fetchByPubDate;
+		private Button fetchButton;
 		private ListBox listBox;
 		private Label lastUpdatedLabel;
 		private Label lastFetchedLabel;
@@ -67,8 +67,12 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		private static final int REFRESH_INTERVAL = 60000;
 		private Image image;
 		private Label lblStoryWatcher;
+		private Label lblCurrentStoryCount;
+		private Label lblCurrentStoryFilter;
+
 		
 		private int numStoryCount = 10;
+		private int sortFilterType = 0;
 		
 	    private LoginInfo loginInfo = null;
 		private VerticalPanel loginPanel = new VerticalPanel();
@@ -124,57 +128,67 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 					lblStoryWatcher = new Label("Story Velocity Dashboard");
 					lblStoryWatcher.setStyleName("gwt-Label-StockWatcher");
 					
+					lastFetchedLabel = new Label("  ");
+					
+					lblCurrentStoryCount = new Label("Current Story Count: "+ numStoryCount);
+					lblCurrentStoryCount.setStyleName("gwt-Label-StockWatcher");
+					
+					lblCurrentStoryFilter = new Label("Current Story Filter: velocity descending");
+					lblCurrentStoryFilter.setStyleName("gwt-Label-StockWatcher");
+					
 					mainPanel.add(lblStoryWatcher);
+					mainPanel.add(lastFetchedLabel);
+					mainPanel.add(lblCurrentStoryCount);
+					mainPanel.add(lblCurrentStoryFilter);
 				}
 				
 				addPanel = new HorizontalPanel();
 				addPanel.addStyleName("addPanel");
 				mainPanel.add(addPanel);
 				{
-					//private Button fetchByTotalPageView;
-					//private Button fetchByTimeInApp;
-					//private Button fetchByPubDate;
-					
 
-
-					/*
 						numStoryTextBox = new TextBox();
-						numStoryTextBox.addKeyPressHandler(new KeyPressHandler() {
-							public void onKeyPress(KeyPressEvent event) {
-								if (event.getCharCode() == KeyCodes.KEY_ENTER){
-									updateFetchFilter();
-								}
-							}
-						});
+						numStoryTextBox.addKeyDownHandler(new NumStoryKeyDownHandler());
 						numStoryTextBox.setFocus(true);
+						
 						addPanel.add(numStoryTextBox);
-						//addPanel.add(new InlineHTML(" "));
+						
 						listBox = new ListBox();
-						listBox.addItem("velocity");
-						listBox.addItem("pubDate");
-						listBox.addItem("pageViews");
+						listBox.addItem("velocity desc");
+						listBox.addItem("pubDate desc");
+						listBox.addItem("total pageViews desc");						
+						listBox.addItem("velocity asc");
+						listBox.addItem("pubDate asc");
+						listBox.addItem("total pageViews asc");
 
 					    // Make enough room for all five items (setting this value to 1 turns it
 					    // into a drop-down list).
 						listBox.setVisibleItemCount(3);
 						addPanel.add(listBox);
-						//addPanel.add(new InlineHTML(" "));
 						addButton = new Button("Update Fetch Filter");
 						addButton.setStyleName("gwt-Button-Add");
-						addButton.addClickHandler(new ClickHandler() {
-							public void onClick(ClickEvent event) {
-								updateFetchFilter();
-							}
-						});
+						addButton.addClickHandler(new FetchFilterClickHandler());
 						addButton.setText("Update Story Filter");
 						addPanel.add(addButton);
-						*/
 				}
 				
 				feedIngesterPanel = new HorizontalPanel();
 				feedIngesterPanel.addStyleName("addPanel");
 				mainPanel.add(feedIngesterPanel);				
 				{
+
+					fetchButton = new Button("FetchByVelocity");
+					fetchButton.setStyleName("gwt-Button-Add");
+					fetchButton.addClickHandler(new ClickHandler() {
+						public void onClick(ClickEvent event) {
+							Date firstFetchTime = new Date();
+							// initial sort type should be by velocity
+							getStoryDetailsByBulk(numStoryCount, sortFilterType, firstFetchTime.getTime());
+						}
+					});
+					fetchButton.setText("FETCH FROM SERVER");
+					feedIngesterPanel.add(fetchButton);
+					feedIngesterPanel.add(new InlineHTML("    "));
 
 					feedIngesterButton = new Button("Get Realtime Data");
 					feedIngesterButton.setStyleName("gwt-Button-Add");
@@ -183,50 +197,10 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 							fetchRealTimeAnalytics();
 						}
 					});
-					feedIngesterButton.setText("Start Fetching Realtime Data");
+					feedIngesterButton.setText("Fetch Realtime Data into Server");
 					feedIngesterPanel.add(feedIngesterButton);
-					lastFetchedLabel = new Label("  ");
-					feedIngesterPanel.add(lastFetchedLabel);
 					feedIngesterPanel.add(new InlineHTML("    "));
 					
-					
-					fetchByVelocity = new Button("FetchByVelocity");
-					fetchByVelocity.setStyleName("gwt-Button-Add");
-					fetchByVelocity.addClickHandler(new ClickHandler() {
-						public void onClick(ClickEvent event) {
-							Date firstFetchTime = new Date();
-							// initial sort type should be by velocity
-							getStoryDetailsByBulk(numStoryCount, 0, firstFetchTime.getTime());
-						}
-					});
-					fetchByVelocity.setText("FetchByVelocity");
-					feedIngesterPanel.add(fetchByVelocity);
-					feedIngesterPanel.add(new InlineHTML("    "));
-					
-					fetchByPubDate = new Button("fetchByPubDate");
-					fetchByPubDate.setStyleName("gwt-Button-Add");
-					fetchByPubDate.addClickHandler(new ClickHandler() {
-						public void onClick(ClickEvent event) {
-							Date firstFetchTime = new Date();
-							// initial sort type should be by velocity
-							getStoryDetailsByBulk(numStoryCount, 1, firstFetchTime.getTime());
-						}
-					});
-					fetchByPubDate.setText("fetchByPubDate");
-					feedIngesterPanel.add(fetchByPubDate);
-					
-					fetchByTotalPageView = new Button("fetchByTotalPageView");
-					fetchByTotalPageView.setStyleName("gwt-Button-Add");
-					fetchByTotalPageView.addClickHandler(new ClickHandler() {
-						public void onClick(ClickEvent event) {
-							Date firstFetchTime = new Date();
-							// initial sort type should be by velocity
-							getStoryDetailsByBulk(numStoryCount, 2, firstFetchTime.getTime());
-						}
-					});
-					fetchByTotalPageView.setText("fetchByTotalPageView");
-					feedIngesterPanel.add(fetchByTotalPageView);
-					feedIngesterPanel.add(new InlineHTML("    "));
 				}
 				
 				
@@ -300,7 +274,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 				int velocity = Random.nextInt(10000);
 				String active = "YES";
 				Date today = new Date();
-				String timeInApp = "15 mins";
+				int timeInApp = 15;
 				int trendfifteenmins = Random.nextInt(500);
 				
 				//double change = pageViews * MAX_PRICE_CHANGE
@@ -366,10 +340,10 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			{
 				updateTable(pVes[i], i);
 			}
-
+			
 			// change the last update timestamp
 			lastUpdatedLabel.setText("Last update : "
-					+ DateTimeFormat.getMediumDateTimeFormat().format(new Date()));
+					+ DateTimeFormat.getFormat("MMMM dd, yyyy HH:mm aa").format(new Date()));
 		}
 
 		private void updateTable(StoryDetailClient storyPageView, int rowCount) {
@@ -410,7 +384,8 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			
 			
 			//int timeInAppInt = Integer.parseInt(storyPageView.getTimeInApp());
-			String timeInApp = storyPageView.getTimeInApp();
+			int timeInAppInt = storyPageView.getTimeInApp();
+			String timeInApp = Util.convertTimeToHoursMins(timeInAppInt);
 			
 			// convert to hours/mins....
 			
@@ -595,6 +570,71 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		    
 		}
 
+		// sample click handlers....
+		
+		   /** 
+		    * create a custom click handler which will call 
+		    * onClick method when button is clicked.
+		    */
+		   private class FetchFilterClickHandler implements ClickHandler {
+		      @Override
+		      public void onClick(ClickEvent event) {
+		    	 
+		    	 sortFilterType = listBox.getSelectedIndex(); 
+		    	
+		 		if (sortFilterType == 0)
+				{
+		 			lblCurrentStoryFilter.setText("Current Story Filter: velocity descending");
+				}
+				else if (sortFilterType == 1)
+				{
+		 			lblCurrentStoryFilter.setText("Current Story Filter: pubDate descending");
+				}
+				else if (sortFilterType == 2)
+				{
+		 			lblCurrentStoryFilter.setText("Current Story Filter: totalPageViews descending");
+				}
+				else if (sortFilterType == 3)
+				{
+		 			lblCurrentStoryFilter.setText("Current Story Filter: velocity ascending");
+				}
+				else if (sortFilterType == 4)
+				{
+		 			lblCurrentStoryFilter.setText("Current Story Filter: pubDate ascending");
+				}
+				else if (sortFilterType == 5)
+				{
+		 			lblCurrentStoryFilter.setText("Current Story Filter: totalPageViews ascending");
+				}
+				else
+				{
+					
+				}
+		      }
+		   }
+
+		   /**
+		    * create a custom key down handler which will call 
+		    * onKeyDown method when a key is down in textbox.
+		    */
+		   private class NumStoryKeyDownHandler implements KeyDownHandler {
+		      @Override
+		      public void onKeyDown(KeyDownEvent event) {
+		         if(event.getNativeKeyCode() == KeyCodes.KEY_ENTER || event.getNativeKeyCode() == KeyCodes.KEY_TAB){
+		        	 
+		        	 numStoryCount =  Integer.parseInt(((TextBox)event.getSource()).getValue());
+		        	 
+		        	 if (numStoryCount > 50 || numStoryCount < 10)
+		        	 {
+		        		 Window.alert("Please enter a story count > 10 && < 50!");
+		        		 numStoryCount = 10; // reset to default
+		        	 }
+		        	 
+		        	 lblCurrentStoryCount.setText("Current Story Count: "+ numStoryCount);
+		         }
+		      }
+		   }
+		
 			
 		
 	}

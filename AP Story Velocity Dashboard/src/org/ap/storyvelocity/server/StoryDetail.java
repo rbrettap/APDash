@@ -38,7 +38,7 @@ public class StoryDetail implements Serializable
 	@Persistent
 	private long lastUpdatedDate;
 	@Persistent
-	private String timeInApp;
+	private int timeInApp;
 	@Persistent
 	private int velocity;
 	@Persistent
@@ -62,7 +62,7 @@ public class StoryDetail implements Serializable
 	{
 	}
 
-	public StoryDetail(String storyId, long pubDate, String timeInApp, int trendfifteenmins, String active)
+	public StoryDetail(String storyId, long pubDate, int timeInApp, int trendfifteenmins, String active)
 	{
 		this.storyId = storyId;
 		this.pubDate = pubDate;
@@ -109,11 +109,11 @@ public class StoryDetail implements Serializable
 		this.lastUpdatedDate = lastUpdatedDate;
 	}
 
-	public String getTimeInApp() {
+	public int getTimeInApp() {
 		return timeInApp;
 	}
 
-	public void setTimeInApp(String timeInApp) {
+	public void setTimeInApp(int timeInApp) {
 		this.timeInApp = timeInApp;
 	}
 

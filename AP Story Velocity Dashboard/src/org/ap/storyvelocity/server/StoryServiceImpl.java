@@ -47,8 +47,14 @@ StoryService {
 	
 	private static final Logger LOG = Logger.getLogger(StoryServiceImpl.class.getName());
 	public HashMap<String, StoryDetail> storyDetailMap = new HashMap<String, StoryDetail>();
-	public HashMap<String, List<StoryDetail>> velocityStoryDetailMap = new HashMap<String, List<StoryDetail>>();
+	public HashMap<String, List<StoryDetail>> filteredStoryDetailMap = new HashMap<String, List<StoryDetail>>();
 	private static Date storyDetailMapFetch = new Date(0);
+	private static Date vstoryDetailMapFetchDesc = new Date(0);
+	private static Date pdstoryDetailMapFetchDesc = new Date(0);
+	private static Date tpvstoryDetailMapFetchDesc = new Date(0);
+	private static Date vstoryDetailMapFetchAsc = new Date(0);
+	private static Date pdstoryDetailMapFetchAsc = new Date(0);
+	private static Date tpvstoryDetailMapFetchAsc = new Date(0);
 	
 	@Override
 	public void addStoryDetail(String storyId) throws NotLoggedInException {
@@ -74,7 +80,7 @@ StoryService {
 			yesterday = cal2.getTime();
 	
 			
-			String timeInApp = "15 mins";
+			int timeInApp = 15;
 			int trendfifteenmins = 25;
 			
 			org.ap.storyvelocity.server.StoryDetail e = new org.ap.storyvelocity.server.StoryDetail(storyId, today.getTime(), timeInApp, trendfifteenmins, active);
@@ -122,7 +128,7 @@ StoryService {
 			yesterday = cal2.getTime();
 	
 			
-			String timeInApp = "15 mins";
+			int timeInApp = 15;
 			int trendfifteenmins = 25;
 			
 			org.ap.storyvelocity.server.StoryDetail e = new org.ap.storyvelocity.server.StoryDetail(storyNames[i], today.getTime(), timeInApp, trendfifteenmins, active);
@@ -199,7 +205,7 @@ StoryService {
 					Calendar cal = Calendar.getInstance();
 					today = cal.getTime();
 					double timeDifference = (double)((today.getTime() - pubDate.getTime())/(1000*60));
-					String timeInApp = timeDifference + " mins";
+					int timeInApp = (int)timeDifference;
 					storyDetailResult.setTimeInApp(timeInApp);
 
 					storyDetailResult.setActive("YES");
@@ -225,18 +231,32 @@ StoryService {
 		if (sorttype == 0)
 		{
 			sortOrderString = "velocity desc";
+			storyDetailMapFetch = vstoryDetailMapFetchDesc;
 		}
 		else if (sorttype == 1)
 		{
 			sortOrderString = "pubDate desc";
+			storyDetailMapFetch = pdstoryDetailMapFetchDesc;
 		}
 		else if (sorttype == 2)
 		{
 			sortOrderString = "totalPageViews desc";
+			storyDetailMapFetch = tpvstoryDetailMapFetchDesc;
 		}
 		else if (sorttype == 3)
 		{
-			sortOrderString = "velocity desc";
+			sortOrderString = "velocity asc";
+			storyDetailMapFetch = vstoryDetailMapFetchAsc;
+		}
+		else if (sorttype == 4)
+		{
+			sortOrderString = "pubDate asc";
+			storyDetailMapFetch = pdstoryDetailMapFetchAsc;
+		}
+		else if (sorttype == 5)
+		{
+			sortOrderString = "totalPageViews asc";
+			storyDetailMapFetch = tpvstoryDetailMapFetchAsc;
 		}
 		
 		 PersistenceManager pm = PMF.get().getPersistenceManager();
@@ -260,57 +280,83 @@ StoryService {
 	    		  
 	    			if (sorttype == 0)
 	    			{
-	    				if (velocityStoryDetailMap.containsKey("velocity"))
-	    				 velocityStoryDetailMap.remove("velocity");
+	    				if (filteredStoryDetailMap.containsKey("velocitydesc"))
+	    					filteredStoryDetailMap.remove("velocitydesc");
 	    				
-	    				velocityStoryDetailMap.put("velocity", results);
-	    				storyDetailMapFetch = new Date();
+	    				filteredStoryDetailMap.put("velocitydesc", results);
+	    				vstoryDetailMapFetchDesc = new Date();
 	    				
 	    			}
 	    			else if (sorttype == 1)
 	    			{
-	    				if (velocityStoryDetailMap.containsKey("pubDate"))
-		    				 velocityStoryDetailMap.remove("pubDate");
-	    				velocityStoryDetailMap.put("pubDate", results);
-	    				storyDetailMapFetch = new Date();
+	    				if (filteredStoryDetailMap.containsKey("pubDatedesc"))
+	    					filteredStoryDetailMap.remove("pubDatedesc");
+	    				filteredStoryDetailMap.put("pubDatedesc", results);
+	    				pdstoryDetailMapFetchDesc = new Date();
 	    			}
 	    			else if (sorttype == 2)
 	    			{
-	    				if (velocityStoryDetailMap.containsKey("totalPageViews"))
-		    				 velocityStoryDetailMap.remove("totalPageViews");
-	    				velocityStoryDetailMap.put("totalPageViews", results);
-	    				storyDetailMapFetch = new Date();
+	    				if (filteredStoryDetailMap.containsKey("totalPageViewsdesc"))
+	    					filteredStoryDetailMap.remove("totalPageViewsdesc");
+	    				filteredStoryDetailMap.put("totalPageViewsdesc", results);
+	    				tpvstoryDetailMapFetchDesc = new Date();
 	    			}
 	    			else if (sorttype == 3)
 	    			{
-	    				if (velocityStoryDetailMap.containsKey("velocity"))
-		    				 velocityStoryDetailMap.remove("velocity");
+	    				if (filteredStoryDetailMap.containsKey("velocityasc"))
+	    					filteredStoryDetailMap.remove("velocityasc");
 	    				
-	    				velocityStoryDetailMap.put("velocity", results);
-	    				storyDetailMapFetch = new Date();
+	    				filteredStoryDetailMap.put("velocityasc", results);
+	    				vstoryDetailMapFetchAsc = new Date();
+	    			}
+	    			else if (sorttype == 4)
+	    			{
+	    				if (filteredStoryDetailMap.containsKey("pubDateasc"))
+	    					filteredStoryDetailMap.remove("pubDateasc");
+	    				
+	    				filteredStoryDetailMap.put("pubDateasc", results);
+	    				pdstoryDetailMapFetchAsc = new Date();
+	    			}
+	    			else if (sorttype == 5)
+	    			{
+	    				if (filteredStoryDetailMap.containsKey("totalPageViewsasc"))
+	    					filteredStoryDetailMap.remove("totalPageViewsasc");
+	    				
+	    				filteredStoryDetailMap.put("totalPageViewsasc", results);
+	    				tpvstoryDetailMapFetchAsc = new Date();
 	    			}
 	    	  }
 	    	  else
 	    	  {
 	    			if (sorttype == 0)
 	    			{
-	    				if (velocityStoryDetailMap.containsKey("velocity"))
-	    					 results = (List<StoryDetail>)(velocityStoryDetailMap.get("velocity"));
+	    				if (filteredStoryDetailMap.containsKey("velocitydesc"))
+	    					 results = (List<StoryDetail>)(filteredStoryDetailMap.get("velocitydesc"));
 	    			}
 	    			else if (sorttype == 1)
 	    			{
-	    				if (velocityStoryDetailMap.containsKey("pubDate"))
-	    					results = (List<StoryDetail>)(velocityStoryDetailMap.get("pubDate"));
+	    				if (filteredStoryDetailMap.containsKey("pubDatedesc"))
+	    					results = (List<StoryDetail>)(filteredStoryDetailMap.get("pubDatedesc"));
 	    			}
 	    			else if (sorttype == 2)
 	    			{
-	    				if (velocityStoryDetailMap.containsKey("totalPageViews"))
-	    					results = (List<StoryDetail>)(velocityStoryDetailMap.get("totalPageViews"));
+	    				if (filteredStoryDetailMap.containsKey("totalPageViewsdesc"))
+	    					results = (List<StoryDetail>)(filteredStoryDetailMap.get("totalPageViewsdesc"));
 	    			}
 	    			else if (sorttype == 3)
 	    			{
-	    				if (velocityStoryDetailMap.containsKey("velocity"))
-	    					results = (List<StoryDetail>)(velocityStoryDetailMap.get("velocity"));
+	    				if (filteredStoryDetailMap.containsKey("velocityasc"))
+	    					results = (List<StoryDetail>)(filteredStoryDetailMap.get("velocityasc"));
+	    			}
+	    			else if (sorttype == 4)
+	    			{
+	    				if (filteredStoryDetailMap.containsKey("pubDateasc"))
+	    					results = (List<StoryDetail>)(filteredStoryDetailMap.get("pubDateasc"));
+	    			}
+	    			else if (sorttype == 5)
+	    			{
+	    				if (filteredStoryDetailMap.containsKey("totalPageViewsasc"))
+	    					results = (List<StoryDetail>)(filteredStoryDetailMap.get("totalPageViewsasc"));
 	    			}
 	    	  }
 	    	  
@@ -322,6 +368,11 @@ StoryService {
 	    			   sd = pm.getObjectById(org.ap.storyvelocity.server.StoryDetail.class, key);
 
 	    			   List<PageView> pageViewSets = sd.getPageViewSets();
+	    			   
+	    			   if (pageViewSets == null)
+	    			   {
+	    				   continue;   // there's an error here - continue on....
+	    			   }
 	    	    		  
 	   				   int totalPageViews = 0;
 	   				   int totalPageViewsLast15 = 0;
@@ -355,7 +406,7 @@ StoryService {
 	   						
 	   						totalPageViews += pv.getPageviews();
 	   						
-	   						double timeRelativeToPubDate = getTimeInAppRelativeToPageViewTime(pubDate, pv.getPageViewDate());
+	   						int timeRelativeToPubDate = (int)getTimeInAppRelativeToPageViewTime(pubDate, pv.getPageViewDate());
 	   						int relativeVelocity = calculateSingularVelocity(totalPageViews, timeRelativeToPubDate);
 	   						
 	   						sb.append(timeRelativeToPubDate+",");	   						
@@ -370,7 +421,7 @@ StoryService {
 	   					
 	   					
 	   					double timeDifference = getTimeInApp(pubDate);	   					
-	   					String timeInApp = timeDifference + " mins";
+	   					int timeInApp = (int)timeDifference;
 						sd.setTimeInApp(timeInApp);
 						
 						int velocity = calculateVelocity(pageViewSets, timeDifference);
@@ -574,7 +625,7 @@ StoryService {
 			   String ga_storyName = gaStory.getGAStoryName();
 			   Date ga_retrievaldate = gaStory.getGARetrievalDate();
 			   int ga_pageview = gaStory.getGAPageviews();
-			   String timeInApp = "";
+			   int timeInApp = 1; // time in app can never be zero - it's always at least 1 min.
 			   int trendfifteenmins = 0;
 			   
 			   org.ap.storyvelocity.server.StoryDetail sdetail =  getStoryDetailById(ga_storyName);
@@ -591,10 +642,12 @@ StoryService {
 					pageViewSets.add(pv);
 					sdetail.setPageViewSets(pageViewSets);
 					sdetail.setLastUpdatedDate(ga_retrievaldate.getTime());
+					sdetail.setPubDate(pv.getPageViewDate().getTime());
 					sdetail.setStoryItemId("");
 					sdetail.setSlug("");
 					sdetail.setAuthor("");
 					sdetail.setTotalPageViews(ga_pageview);
+					sdetail.setTrendFifteenMins(ga_pageview); // obviously this is within the last 15 minutes so need to set it here....
 					
 					double timeDifference = getTimeInApp(ga_retrievaldate);
 					int velocity = calculateVelocity(pageViewSets, timeDifference);
@@ -636,11 +689,19 @@ StoryService {
    					  }  
 					  PageView pvi =  (PageView)pageViewSets.get(i);
 					  totalPageViews += pvi.getPageviews();
+					  
+					  // look at the pageviewDate to see whether it's within the last 15...
+					  if (isDateYounger(pv.getPageViewDate(), 15))
+					  {
+						  trendfifteenmins += pvi.getPageviews();
+					  }
+					  
 				   }
 				   sdetail.setLastUpdatedDate(ga_retrievaldate.getTime());
 				   sdetail.setPageViewSets(pageViewSets);
 				   sdetail.setPubDate(pubDate.getTime());
 				   sdetail.setTotalPageViews(totalPageViews);
+				   sdetail.setTrendFifteenMins(trendfifteenmins);
 					
 				   double timeDifference = getTimeInAppRelativeToPageViewTime(pubDate, ga_retrievaldate);
 					// do we calculate the last velocity or total velocity of all pageview sets???
