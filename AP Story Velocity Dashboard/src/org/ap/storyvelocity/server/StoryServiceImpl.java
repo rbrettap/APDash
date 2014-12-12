@@ -55,6 +55,7 @@ StoryService {
 	private static Date vstoryDetailMapFetchAsc = new Date(0);
 	private static Date pdstoryDetailMapFetchAsc = new Date(0);
 	private static Date tpvstoryDetailMapFetchAsc = new Date(0);
+	public static int MAX_AGE_OF_STORY = 2160; // represents 36 hours in minutes....
 	
 	@Override
 	public void addStoryDetail(String storyId) throws NotLoggedInException {
@@ -270,10 +271,12 @@ StoryService {
 			  //org.ap.storyvelocity.server.StoryDetail e = pm.getObjectById(org.ap.storyvelocity.server.StoryDetail.class, key);
 	    	  List<StoryDetail> results = null;
 
-	    	  if (!isDateYounger(storyDetailMapFetch, 3))
+	    	  // turn off caching for now....
+	    	  if (!isDateYounger(storyDetailMapFetch, 1))
 	    	  {
 	    			// do the query here because the map is empty....
-	  	    	    Query q = pm.newQuery(StoryDetail.class);
+	  	    	    Query q = pm.newQuery(StoryDetail.class, "active == 'Y' || active == 'YES'");
+	  	    	    //q.declareParameters("String activeFlagParam");
 		    	    q.setOrdering(sortOrderString);
 		    	    q.setRange(0, numResults);
 		    	    results = (List<StoryDetail>) q.execute();
@@ -366,6 +369,13 @@ StoryService {
 	    		    	 // should only be one or none....
 	    		       Key key = KeyFactory.createKey(StoryDetail.class.getSimpleName(), sd.getStoryId());
 	    			   sd = pm.getObjectById(org.ap.storyvelocity.server.StoryDetail.class, key);
+	    			   
+	    			   // so first check to see if the current story detail is active, otherwise don't grab it....
+	    			   if (sd.getActive().equals("N"))
+	    			   {
+	    				   // don't even bother with the rest....
+	    				   continue;
+	    			   }
 
 	    			   List<PageView> pageViewSets = sd.getPageViewSets();
 	    			   
@@ -393,9 +403,14 @@ StoryService {
 	   			        } );
 	   			       }
 	   				   
+	   				   // set a flag to determine whether or not to remove the first velocity point.....
+	   				   boolean moreThanPageViewPerStory = false;
+	   				   int pageViewSize = pageViewSets.size();
+	   				   
+	   				   if (pageViewSize > 1) moreThanPageViewPerStory = true;
 	   					
-	   					for (int ii = 0; ii < pageViewSets.size(); ii++)
-	   					{
+	   					for (int ii = 0; ii < pageViewSize; ii++)
+	   					{	   						
 	   						PageView pv = (PageView)pageViewSets.get(ii);
 	   						
 	   					    // make sure that the earliest pageViewDate qualifies as the pub Date
@@ -409,9 +424,28 @@ StoryService {
 	   						int timeRelativeToPubDate = (int)getTimeInAppRelativeToPageViewTime(pubDate, pv.getPageViewDate());
 	   						int relativeVelocity = calculateSingularVelocity(totalPageViews, timeRelativeToPubDate);
 	   						
-	   						sb.append(timeRelativeToPubDate+",");	   						
-	   						sb.append(pv.getPageviews()+",");	   						
-	   						sb.append(relativeVelocity+"\n");
+	   						// basically velocity is much closer if time relative to pub date is not at time 0.
+	   						if (timeRelativeToPubDate > 5)
+	   						{
+	   						  sb.append(timeRelativeToPubDate+",");	   						
+	   						  //sb.append(pv.getPageviews()+",");	   						
+	   						  sb.append(relativeVelocity+"\n");
+	   						}
+	   						
+	   						/*
+	   						if (moreThanPageViewPerStory == false && ii == 0)
+	   						{
+	   						  sb.append(timeRelativeToPubDate+",");	   						
+	   						  sb.append(pv.getPageviews()+",");	   						
+	   						  sb.append(relativeVelocity+"\n");
+	   						}
+	   						else if (moreThanPageViewPerStory == true && ii > 0)
+	   						{
+		   					  sb.append(timeRelativeToPubDate+",");	   						
+		   					  sb.append(pv.getPageviews()+",");	   						
+		   					  sb.append(relativeVelocity+"\n");
+	   						}
+	   						*/
 	   						
 	   						// is pageView in the last 15 minutes.....
 	   						if (isDateYounger(pv.getPageViewDate(), 15))
@@ -424,11 +458,20 @@ StoryService {
 	   					int timeInApp = (int)timeDifference;
 						sd.setTimeInApp(timeInApp);
 						
+						
+						
 						int velocity = calculateVelocity(pageViewSets, timeDifference);
 						sd.setVelocity(velocity);
 						sd.setTrendFifteenMins(totalPageViewsLast15);
 						sd.setTotalPageViews(totalPageViews);
-						sd.setActive("YES");
+						
+						// determine if story is actually older than 36 hours otherwise set to inactive and stop processing on it.....
+						if (timeInApp > MAX_AGE_OF_STORY)
+						{
+							sd.setActive("N");
+							continue;
+						}
+						sd.setActive("Y");
    	
 						// clear this out before sending on the wire...
 					    storyDetailClient = new StoryDetailClient(sd.getStoryId(), sd.getPubDate(), 
@@ -620,7 +663,7 @@ StoryService {
 					
 			   Key key = KeyFactory.createKey(StoryDetail.class.getSimpleName(), keyEntryMap);
 			   
-			   String active = "YES";
+			   String active = "Y";
 			   GAStory gaStory = (GAStory)StoryAnalyticsAPI.getInstance().gaDataMap.get(keyEntryMap);
 			   String ga_storyName = gaStory.getGAStoryName();
 			   Date ga_retrievaldate = gaStory.getGARetrievalDate();
@@ -700,6 +743,18 @@ StoryService {
 				   sdetail.setLastUpdatedDate(ga_retrievaldate.getTime());
 				   sdetail.setPageViewSets(pageViewSets);
 				   sdetail.setPubDate(pubDate.getTime());
+				   
+				   // after calculation here, make sure that we set the active flag to yes/no depending on age....
+				   if (isDateYounger(pv.getPageViewDate(), MAX_AGE_OF_STORY))
+				   {
+					  sdetail.setActive("Y");
+				   
+				   }
+				   else
+				   {
+					  sdetail.setActive("N");
+				   }
+				   
 				   sdetail.setTotalPageViews(totalPageViews);
 				   sdetail.setTrendFifteenMins(trendfifteenmins);
 					

@@ -12,20 +12,16 @@ import com.google.gwt.event.dom.client.KeyDownEvent;
 import com.google.gwt.event.dom.client.KeyDownHandler;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.google.gwt.user.client.ui.AbsolutePanel;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.InlineHTML;
 import com.google.gwt.user.client.ui.ListBox;
-import com.google.gwt.user.client.ui.PopupPanel;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.FlexTable;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.event.dom.client.KeyPressHandler;
-import com.google.gwt.event.dom.client.KeyPressEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,7 +60,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		private Label lastUpdatedLabel;
 		private Label lastFetchedLabel;
 		private ArrayList <String> stories = new ArrayList<String>();  
-		private static final int REFRESH_INTERVAL = 60000;
+		private static final int REFRESH_INTERVAL = 900000;
 		private Image image;
 		private Label lblStoryWatcher;
 		private Label lblCurrentStoryCount;
@@ -81,6 +77,10 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 	    private Anchor signInLink = new Anchor("Sign In");
 	    private Anchor signOutLink = new Anchor("Sign Out");
 	    private final StoryServiceAsync storyService = GWT.create(StoryService.class);
+	    
+	    final ProgressBar progressBar = new ProgressBar(20 ,ProgressBar.SHOW_TEXT);
+	    public static Timer progressTimer = null;
+	    
 	    
 	    public void onModuleLoad() {
 	        // Check login status using login service.
@@ -128,8 +128,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 					lblStoryWatcher = new Label("Story Velocity Dashboard");
 					lblStoryWatcher.setStyleName("gwt-Label-StockWatcher");
 					
-					lastFetchedLabel = new Label("  ");
-					
+					lastFetchedLabel = new Label("            ");
 					lblCurrentStoryCount = new Label("Current Story Count: "+ numStoryCount);
 					lblCurrentStoryCount.setStyleName("gwt-Label-StockWatcher");
 					
@@ -138,6 +137,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 					
 					mainPanel.add(lblStoryWatcher);
 					mainPanel.add(lastFetchedLabel);
+					mainPanel.add(progressBar);
 					mainPanel.add(lblCurrentStoryCount);
 					mainPanel.add(lblCurrentStoryFilter);
 				}
@@ -257,7 +257,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			//updateTable(pVes);
 			Date firstFetchTime = new Date();
 			// initial sort type should be by velocity
-			//getStoryDetailsByBulk(numStoryCount, 0, firstFetchTime.getTime());
+			getStoryDetailsByBulk(numStoryCount, sortFilterType, firstFetchTime.getTime());
 
 			
 		}
@@ -437,7 +437,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			
 			//List pageViewSets = storyPageView.getPageviews();
 			String data = storyPageView.pageViewTrend;			 
-			String  myData = "Time in App,Max Page Views,Velocity\n"+data;
+			String  myData = "Time in App, Velocity\n"+data;
 			
 			ACLineChart chart;
 
@@ -512,20 +512,26 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 	// the main function to populate the grid table in bulk (10 items)
     // from the database....
 	private void getStoryDetailsByBulk(final int numResults, final int sorttype, final long lastFetchedTime) {
-			
+		
+
+		startProgressBar();
 		storyService.getStoryDetailsInBulk(numResults,  sorttype, lastFetchedTime, new AsyncCallback<List<StoryDetailClient>>() {
 		
 		public void onFailure(Throwable error) {
+			
+			stopProgressBar();
 		    	  
 		}
 		public void onSuccess(List<StoryDetailClient> result) {
 		       
 			StoryDetailClient[] pVes = new StoryDetailClient[result.size()];
-			
+
 			for (int i = 0; i < result.size(); i++)
 			{
 				pVes[i] = (StoryDetailClient)result.get(i);
 				updateTable(pVes[i], i);
+				progressBar.setProgress(100);
+				stopProgressBar();
 			}
 			
 		}
@@ -533,6 +539,28 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		 });
 	}
 
+
+    private void startProgressBar()
+    {
+		progressBar.setText("Fetching From Server...");
+		
+		progressTimer = new Timer() {
+		    public void run() {
+		      int progress = progressBar.getProgress()+4;
+		      if (progress>100) cancel();
+		      progressBar.setProgress(progress);
+		    }
+		};
+		progressTimer.scheduleRepeating(1000);
+    }
+    
+    private void stopProgressBar()
+    {
+    	progressTimer.cancel();
+		progressBar.setText("");
+		progressBar.setProgress(0);
+    }
+		
 		
      // feed fetcher functions......
 		private void fetchRealTimeAnalytics() {
