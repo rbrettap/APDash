@@ -8,6 +8,6 @@
 <cron>
         <url>/ap_story_velocity_dashboard/deletecronservlet</url>
         <description>job to delete old stories</description>
-        <schedule>every 2 hours</schedule>
+        <schedule>every 45 minutes</schedule>
 </cron>
 </cronentries>

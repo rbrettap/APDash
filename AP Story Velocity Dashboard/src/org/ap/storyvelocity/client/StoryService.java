@@ -19,5 +19,6 @@ public interface StoryService extends RemoteService {
 	 public List<StoryDetailClient> getStories() throws NotLoggedInException;
 	 public StoryDetailClient getStoryDetails(String storyId) throws NotLoggedInException;
 	 public List<StoryDetailClient> getStoryDetailsInBulk(int numResults, int sorttype, long lastFetchedTime);	 
+	 public List<StoryDetailClient> getUpdatedStoryDetailsInBulk(String[] storyNames, long lastFetchedTime);	 
 	 public String fetchRealTimeAnalytics() throws NotLoggedInException;
 }

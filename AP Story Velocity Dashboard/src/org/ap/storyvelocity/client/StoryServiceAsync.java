@@ -17,6 +17,8 @@ public interface StoryServiceAsync {
 	  public void getStories(AsyncCallback<List<StoryDetailClient>> async);
 	  public void getStoryDetails(String storyId, AsyncCallback<StoryDetailClient> async);
 	  
-	  public void getStoryDetailsInBulk(int numResults, int sorttype, long lastFetchedTime, AsyncCallback<List<StoryDetailClient>> async);	
+	  public void getStoryDetailsInBulk(int numResults, int sorttype, long lastFetchedTime, AsyncCallback<List<StoryDetailClient>> async);
+	  public void getUpdatedStoryDetailsInBulk(String[] storyNames, long lastFetchedTime, AsyncCallback<List<StoryDetailClient>> async);	
+
 	  public void fetchRealTimeAnalytics(AsyncCallback<String> async);
 }

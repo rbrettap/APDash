@@ -3,16 +3,13 @@ package org.ap.storyvelocity.server;
 import org.ap.storyvelocity.client.NotLoggedInException;
 import org.ap.storyvelocity.client.StoryService;
 
-import com.google.gwt.user.client.Random;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,8 +20,6 @@ import javax.jdo.Query;
 
 import org.ap.storyvelocity.server.PMF;
 
-import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.users.User;
@@ -32,6 +27,7 @@ import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
 
 import org.ap.storyvelocity.shared.StoryDetailClient;
+import org.ap.storyvelocity.shared.Util;
 import org.ap.storyvelocity.server.StoryDetail;
 import org.ap.storyvelocity.server.PageView;
 import org.ap.storyvelocity.server.Story;
@@ -46,16 +42,7 @@ public class StoryServiceImpl extends RemoteServiceServlet implements
 StoryService {
 	
 	private static final Logger LOG = Logger.getLogger(StoryServiceImpl.class.getName());
-	public HashMap<String, StoryDetail> storyDetailMap = new HashMap<String, StoryDetail>();
-	public HashMap<String, List<StoryDetail>> filteredStoryDetailMap = new HashMap<String, List<StoryDetail>>();
-	private static Date storyDetailMapFetch = new Date(0);
-	private static Date vstoryDetailMapFetchDesc = new Date(0);
-	private static Date pdstoryDetailMapFetchDesc = new Date(0);
-	private static Date tpvstoryDetailMapFetchDesc = new Date(0);
-	private static Date vstoryDetailMapFetchAsc = new Date(0);
-	private static Date pdstoryDetailMapFetchAsc = new Date(0);
-	private static Date tpvstoryDetailMapFetchAsc = new Date(0);
-	public static int MAX_AGE_OF_STORY = 2160; // represents 36 hours in minutes....
+
 	
 	@Override
 	public void addStoryDetail(String storyId) throws NotLoggedInException {
@@ -167,52 +154,23 @@ StoryService {
 		}
 	}
 	
+	// should use this to get the latest updates to a story detail....
 	@Override
 	public StoryDetailClient getStoryDetails(String storyId) throws NotLoggedInException {
 	    //checkLoggedIn();
 		 PersistenceManager pm = PMF.get().getPersistenceManager();
-		 org.ap.storyvelocity.server.StoryDetail storyDetailResult = null;
 		 org.ap.storyvelocity.shared.StoryDetailClient storyDetailClient = null;
 
 	      try {
 		        
 	    	  Key key = KeyFactory.createKey(StoryDetail.class.getSimpleName(), storyId);
 			  org.ap.storyvelocity.server.StoryDetail e = pm.getObjectById(org.ap.storyvelocity.server.StoryDetail.class, key);
-	    	  //Query q = pm.newQuery(StoryDetail.class, "storyId == storyIdParam");
-	    	  //q.declareParameters("String storyIdParam");
-	    	  //List<StoryDetail> results = (List<StoryDetail>) q.execute(storyId);
 	    	      if (e == null)
 	    	    	  return null;
 			  
 	    		  // should only be one or none....
-	    		  storyDetailResult = (StoryDetail)e;
-	    		  List<PageView> pageViewSets = storyDetailResult.getPageViewSets();
-	    		  
-				   int totalPageViews = 0;
-				   
-				   // need to calculate timeInApp
-				   Date pubDate = new Date();
-					
-					for (int ii = 0; ii < pageViewSets.size(); ii++)
-					{
-						PageView pv = (PageView)pageViewSets.get(ii);
-						totalPageViews += pv.getPageviews();
-						
-						if (pv.getPageViewDate().before(pubDate))
-                          pubDate = pv.getPageViewDate();
-					}
-					
-					Date today = new Date();
-					Calendar cal = Calendar.getInstance();
-					today = cal.getTime();
-					double timeDifference = (double)((today.getTime() - pubDate.getTime())/(1000*60));
-					int timeInApp = (int)timeDifference;
-					storyDetailResult.setTimeInApp(timeInApp);
-
-					storyDetailResult.setActive("YES");
-					// clear this out before sending on the wire...
-					storyDetailClient = new StoryDetailClient(storyDetailResult.getStoryId(), storyDetailResult.getPubDate(), storyDetailResult.getTimeInApp(), 
-							totalPageViews, storyDetailResult.getVelocity(), storyDetailResult.getTrendFifteenMins(), storyDetailResult.getActive());
+	    	      storyDetailClient =  getDetailsForStoryId(e);
+	
 
 
 	      } finally {
@@ -228,41 +186,11 @@ StoryService {
 		
 		// first check to see if the lastFetchedTime is within the time interval....
 		String sortOrderString = "velocity desc";
-		
-		if (sorttype == 0)
-		{
-			sortOrderString = "velocity desc";
-			storyDetailMapFetch = vstoryDetailMapFetchDesc;
-		}
-		else if (sorttype == 1)
-		{
-			sortOrderString = "pubDate desc";
-			storyDetailMapFetch = pdstoryDetailMapFetchDesc;
-		}
-		else if (sorttype == 2)
-		{
-			sortOrderString = "totalPageViews desc";
-			storyDetailMapFetch = tpvstoryDetailMapFetchDesc;
-		}
-		else if (sorttype == 3)
-		{
-			sortOrderString = "velocity asc";
-			storyDetailMapFetch = vstoryDetailMapFetchAsc;
-		}
-		else if (sorttype == 4)
-		{
-			sortOrderString = "pubDate asc";
-			storyDetailMapFetch = pdstoryDetailMapFetchAsc;
-		}
-		else if (sorttype == 5)
-		{
-			sortOrderString = "totalPageViews asc";
-			storyDetailMapFetch = tpvstoryDetailMapFetchAsc;
-		}
+		sortOrderString = StoryUtil.getSortOrderString(sorttype);
+		 StoryUtil.storyDetailMapFetch =  StoryUtil.getStoryDetailMapFetch(sorttype);
+
 		
 		 PersistenceManager pm = PMF.get().getPersistenceManager();
-		 org.ap.storyvelocity.server.StoryDetail storyDetailResult = null;
-		 org.ap.storyvelocity.shared.StoryDetailClient storyDetailClient = null;
 		 List<StoryDetailClient> sdclientlist = new ArrayList<StoryDetailClient>();
 
 	      try {
@@ -272,7 +200,7 @@ StoryService {
 	    	  List<StoryDetail> results = null;
 
 	    	  // turn off caching for now....
-	    	  if (!isDateYounger(storyDetailMapFetch, 1))
+	    	  if (!StoryUtil.isDateYounger( StoryUtil.storyDetailMapFetch, 1))
 	    	  {
 	    			// do the query here because the map is empty....
 	  	    	    Query q = pm.newQuery(StoryDetail.class, "active == 'Y' || active == 'YES'");
@@ -283,202 +211,94 @@ StoryService {
 	    		  
 	    			if (sorttype == 0)
 	    			{
-	    				if (filteredStoryDetailMap.containsKey("velocitydesc"))
-	    					filteredStoryDetailMap.remove("velocitydesc");
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("velocitydesc"))
+	    					 StoryUtil.filteredStoryDetailMap.remove("velocitydesc");
 	    				
-	    				filteredStoryDetailMap.put("velocitydesc", results);
-	    				vstoryDetailMapFetchDesc = new Date();
+	    				 StoryUtil.filteredStoryDetailMap.put("velocitydesc", results);
+	    				 StoryUtil.vstoryDetailMapFetchDesc = new Date();
 	    				
 	    			}
 	    			else if (sorttype == 1)
 	    			{
-	    				if (filteredStoryDetailMap.containsKey("pubDatedesc"))
-	    					filteredStoryDetailMap.remove("pubDatedesc");
-	    				filteredStoryDetailMap.put("pubDatedesc", results);
-	    				pdstoryDetailMapFetchDesc = new Date();
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("pubDatedesc"))
+	    					 StoryUtil.filteredStoryDetailMap.remove("pubDatedesc");
+	    				 StoryUtil.filteredStoryDetailMap.put("pubDatedesc", results);
+	    				 StoryUtil.pdstoryDetailMapFetchDesc = new Date();
 	    			}
 	    			else if (sorttype == 2)
 	    			{
-	    				if (filteredStoryDetailMap.containsKey("totalPageViewsdesc"))
-	    					filteredStoryDetailMap.remove("totalPageViewsdesc");
-	    				filteredStoryDetailMap.put("totalPageViewsdesc", results);
-	    				tpvstoryDetailMapFetchDesc = new Date();
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("totalPageViewsdesc"))
+	    					 StoryUtil.filteredStoryDetailMap.remove("totalPageViewsdesc");
+	    				 StoryUtil.filteredStoryDetailMap.put("totalPageViewsdesc", results);
+	    				 StoryUtil.tpvstoryDetailMapFetchDesc = new Date();
 	    			}
 	    			else if (sorttype == 3)
 	    			{
-	    				if (filteredStoryDetailMap.containsKey("velocityasc"))
-	    					filteredStoryDetailMap.remove("velocityasc");
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("velocityasc"))
+	    					 StoryUtil.filteredStoryDetailMap.remove("velocityasc");
 	    				
-	    				filteredStoryDetailMap.put("velocityasc", results);
-	    				vstoryDetailMapFetchAsc = new Date();
+	    				 StoryUtil.filteredStoryDetailMap.put("velocityasc", results);
+	    				 StoryUtil.vstoryDetailMapFetchAsc = new Date();
 	    			}
 	    			else if (sorttype == 4)
 	    			{
-	    				if (filteredStoryDetailMap.containsKey("pubDateasc"))
-	    					filteredStoryDetailMap.remove("pubDateasc");
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("pubDateasc"))
+	    					 StoryUtil.filteredStoryDetailMap.remove("pubDateasc");
 	    				
-	    				filteredStoryDetailMap.put("pubDateasc", results);
-	    				pdstoryDetailMapFetchAsc = new Date();
+	    				 StoryUtil.filteredStoryDetailMap.put("pubDateasc", results);
+	    				 StoryUtil.pdstoryDetailMapFetchAsc = new Date();
 	    			}
 	    			else if (sorttype == 5)
 	    			{
-	    				if (filteredStoryDetailMap.containsKey("totalPageViewsasc"))
-	    					filteredStoryDetailMap.remove("totalPageViewsasc");
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("totalPageViewsasc"))
+	    					 StoryUtil.filteredStoryDetailMap.remove("totalPageViewsasc");
 	    				
-	    				filteredStoryDetailMap.put("totalPageViewsasc", results);
-	    				tpvstoryDetailMapFetchAsc = new Date();
+	    				 StoryUtil.filteredStoryDetailMap.put("totalPageViewsasc", results);
+	    				 StoryUtil.tpvstoryDetailMapFetchAsc = new Date();
 	    			}
 	    	  }
 	    	  else
 	    	  {
 	    			if (sorttype == 0)
 	    			{
-	    				if (filteredStoryDetailMap.containsKey("velocitydesc"))
-	    					 results = (List<StoryDetail>)(filteredStoryDetailMap.get("velocitydesc"));
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("velocitydesc"))
+	    					 results = (List<StoryDetail>)( StoryUtil.filteredStoryDetailMap.get("velocitydesc"));
 	    			}
 	    			else if (sorttype == 1)
 	    			{
-	    				if (filteredStoryDetailMap.containsKey("pubDatedesc"))
-	    					results = (List<StoryDetail>)(filteredStoryDetailMap.get("pubDatedesc"));
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("pubDatedesc"))
+	    					results = (List<StoryDetail>)( StoryUtil.filteredStoryDetailMap.get("pubDatedesc"));
 	    			}
 	    			else if (sorttype == 2)
 	    			{
-	    				if (filteredStoryDetailMap.containsKey("totalPageViewsdesc"))
-	    					results = (List<StoryDetail>)(filteredStoryDetailMap.get("totalPageViewsdesc"));
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("totalPageViewsdesc"))
+	    					results = (List<StoryDetail>)( StoryUtil.filteredStoryDetailMap.get("totalPageViewsdesc"));
 	    			}
 	    			else if (sorttype == 3)
 	    			{
-	    				if (filteredStoryDetailMap.containsKey("velocityasc"))
-	    					results = (List<StoryDetail>)(filteredStoryDetailMap.get("velocityasc"));
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("velocityasc"))
+	    					results = (List<StoryDetail>)( StoryUtil.filteredStoryDetailMap.get("velocityasc"));
 	    			}
 	    			else if (sorttype == 4)
 	    			{
-	    				if (filteredStoryDetailMap.containsKey("pubDateasc"))
-	    					results = (List<StoryDetail>)(filteredStoryDetailMap.get("pubDateasc"));
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("pubDateasc"))
+	    					results = (List<StoryDetail>)( StoryUtil.filteredStoryDetailMap.get("pubDateasc"));
 	    			}
 	    			else if (sorttype == 5)
 	    			{
-	    				if (filteredStoryDetailMap.containsKey("totalPageViewsasc"))
-	    					results = (List<StoryDetail>)(filteredStoryDetailMap.get("totalPageViewsasc"));
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("totalPageViewsasc"))
+	    					results = (List<StoryDetail>)( StoryUtil.filteredStoryDetailMap.get("totalPageViewsasc"));
 	    			}
 	    	  }
 	    	  
 	    	
-	    	  if (!results.isEmpty()) {
+	    	     if (!results.isEmpty()) {
 	    		    for (StoryDetail sd : results) {
 	    		    	 // should only be one or none....
-	    		       Key key = KeyFactory.createKey(StoryDetail.class.getSimpleName(), sd.getStoryId());
-	    			   sd = pm.getObjectById(org.ap.storyvelocity.server.StoryDetail.class, key);
-	    			   
-	    			   // so first check to see if the current story detail is active, otherwise don't grab it....
-	    			   if (sd.getActive().equals("N"))
-	    			   {
-	    				   // don't even bother with the rest....
-	    				   continue;
-	    			   }
-
-	    			   List<PageView> pageViewSets = sd.getPageViewSets();
-	    			   
-	    			   if (pageViewSets == null)
-	    			   {
-	    				   continue;   // there's an error here - continue on....
-	    			   }
-	    	    		  
-	   				   int totalPageViews = 0;
-	   				   int totalPageViewsLast15 = 0;
-	   				   
-	   				   // need to calculate timeInApp
-	   				   Date pubDate = new Date();
-	   				   
-	   				   // build the chart buffer...
-	   				   StringBuffer sb = new StringBuffer();
-	   				   // first make sure the pageViewSets are ordered...
-	   			  
-	   				   if (pageViewSets.size() > 0) {
-	   			         Collections.sort(pageViewSets, new Comparator<PageView>() {
-	   			         @Override
-	   			         public int compare(final PageView object1, final PageView object2) {
-	   			             return object1.compareTo(object2);
-	   			         }
-	   			        } );
-	   			       }
-	   				   
-	   				   // set a flag to determine whether or not to remove the first velocity point.....
-	   				   boolean moreThanPageViewPerStory = false;
-	   				   int pageViewSize = pageViewSets.size();
-	   				   
-	   				   if (pageViewSize > 1) moreThanPageViewPerStory = true;
-	   					
-	   					for (int ii = 0; ii < pageViewSize; ii++)
-	   					{	   						
-	   						PageView pv = (PageView)pageViewSets.get(ii);
-	   						
-	   					    // make sure that the earliest pageViewDate qualifies as the pub Date
-	   						if (ii == 0)
-	   						{
-	   							pubDate =  pv.getPageViewDate();
-	   						}
-	   						
-	   						totalPageViews += pv.getPageviews();
-	   						
-	   						int timeRelativeToPubDate = (int)getTimeInAppRelativeToPageViewTime(pubDate, pv.getPageViewDate());
-	   						int relativeVelocity = calculateSingularVelocity(totalPageViews, timeRelativeToPubDate);
-	   						
-	   						// basically velocity is much closer if time relative to pub date is not at time 0.
-	   						if (timeRelativeToPubDate > 5)
-	   						{
-	   						  sb.append(timeRelativeToPubDate+",");	   						
-	   						  //sb.append(pv.getPageviews()+",");	   						
-	   						  sb.append(relativeVelocity+"\n");
-	   						}
-	   						
-	   						/*
-	   						if (moreThanPageViewPerStory == false && ii == 0)
-	   						{
-	   						  sb.append(timeRelativeToPubDate+",");	   						
-	   						  sb.append(pv.getPageviews()+",");	   						
-	   						  sb.append(relativeVelocity+"\n");
-	   						}
-	   						else if (moreThanPageViewPerStory == true && ii > 0)
-	   						{
-		   					  sb.append(timeRelativeToPubDate+",");	   						
-		   					  sb.append(pv.getPageviews()+",");	   						
-		   					  sb.append(relativeVelocity+"\n");
-	   						}
-	   						*/
-	   						
-	   						// is pageView in the last 15 minutes.....
-	   						if (isDateYounger(pv.getPageViewDate(), 15))
-	   								totalPageViewsLast15 += pv.getPageviews();
-	   								
-	   					}
-	   					
-	   					
-	   					double timeDifference = getTimeInApp(pubDate);	   					
-	   					int timeInApp = (int)timeDifference;
-						sd.setTimeInApp(timeInApp);
-						
-						
-						
-						int velocity = calculateVelocity(pageViewSets, timeDifference);
-						sd.setVelocity(velocity);
-						sd.setTrendFifteenMins(totalPageViewsLast15);
-						sd.setTotalPageViews(totalPageViews);
-						
-						// determine if story is actually older than 36 hours otherwise set to inactive and stop processing on it.....
-						if (timeInApp > MAX_AGE_OF_STORY)
-						{
-							sd.setActive("N");
-							continue;
-						}
-						sd.setActive("Y");
-   	
-						// clear this out before sending on the wire...
-					    storyDetailClient = new StoryDetailClient(sd.getStoryId(), sd.getPubDate(), 
-					    sd.getTimeInApp(), totalPageViews, sd.getVelocity(), sd.getTrendFifteenMins(), 
-					    sd.getActive());
-					    storyDetailClient.pageViewTrend = sb.toString(); // remove the last comma....
-					    sdclientlist.add(storyDetailClient);
+	    		    	
+	    		      StoryDetailClient sdc = getDetailsForStoryId(sd);
+	    		      if (sdc != null)
+ 				        sdclientlist.add(sdc);
 	    		    }
 	    		  } else {
 	    		    // Handle "no results" case
@@ -492,85 +312,196 @@ StoryService {
 		  return sdclientlist;
 	      
 	}
-
-
-	public int calculateSingularVelocity(int pageView, double timeDifference)
-	{
-		int velocity = (int) ((pageView / timeDifference) * 60);			
-	    return velocity;
-	}
-
 	
-	public int calculateVelocity(List<PageView> pageViewSets, double timeDifference)
-	{
-		   int totalPageViews = 0;
-		   
+	
+	private StoryDetailClient getDetailsForStoryId(StoryDetail sd) {
+		
+		 org.ap.storyvelocity.shared.StoryDetailClient storyDetailClient = null;
 
+		 PersistenceManager pm = PMF.get().getPersistenceManager();
+		
+   	       // should only be one or none....
+	       Key key = KeyFactory.createKey(StoryDetail.class.getSimpleName(), sd.getStoryId());
+		   sd = pm.getObjectById(org.ap.storyvelocity.server.StoryDetail.class, key);
+		   
+		   // so first check to see if the current story detail is active, otherwise don't grab it....
+		   if (sd.getActive().equals("N"))
+		   {
+			   // don't even bother with the rest....
+			   return null;
+		   }
+
+		   List<PageView> pageViewSets = sd.getPageViewSets();
+		   
+		   if (pageViewSets == null)
+		   {
+			   return null;   // there's an error here - continue on....
+		   }
+		  
+		   int totalPageViews = 0;
+		   int totalPageViewsLast15 = 0;
+		   
+		   // need to calculate timeInApp
 		   Date pubDate = new Date();
-				
-			for (int ii = 0; ii < pageViewSets.size(); ii++)
-			{
+		   
+		   // build the chart buffer...
+		   StringBuffer sb = new StringBuffer();
+		   // first make sure the pageViewSets are ordered...
+	  
+		   if (pageViewSets.size() > 0) {
+	         Collections.sort(pageViewSets, new Comparator<PageView>() {
+	         @Override
+	         public int compare(final PageView object1, final PageView object2) {
+	             return object1.compareTo(object2);
+	         }
+	        } );
+	       }
+		   
+		   // set a flag to determine whether or not to remove the first velocity point.....
+		   boolean moreThanPageViewPerStory = false;
+		   int pageViewSize = pageViewSets.size();
+		   
+		   if (pageViewSize > 1) moreThanPageViewPerStory = true;
+			
+			for (int ii = 0; ii < pageViewSize; ii++)
+			{	   						
 				PageView pv = (PageView)pageViewSets.get(ii);
+				
+			    // make sure that the earliest pageViewDate qualifies as the pub Date
+				if (ii == 0)
+				{
+					pubDate =  pv.getPageViewDate();
+				}
+				
 				totalPageViews += pv.getPageviews();
 				
-				if (pv.getPageViewDate().before(pubDate))
-                  pubDate = pv.getPageViewDate();
+				int timeRelativeToPubDate = (int)StoryUtil.getTimeInAppRelativeToPageViewTime(pubDate, pv.getPageViewDate());
+				int relativeVelocity =  StoryUtil.calculateSingularVelocity(totalPageViews, timeRelativeToPubDate);
+				
+				// basically velocity is much closer if time relative to pub date is not at time 0.
+				if (timeRelativeToPubDate > 5)
+				{
+				  sb.append(timeRelativeToPubDate+",");	   						
+				  //sb.append(pv.getPageviews()+",");	   						
+				  sb.append(relativeVelocity+"\n");
+				}
+				
+				/*
+				if (moreThanPageViewPerStory == false && ii == 0)
+				{
+				  sb.append(timeRelativeToPubDate+",");	   						
+				  sb.append(pv.getPageviews()+",");	   						
+				  sb.append(relativeVelocity+"\n");
+				}
+				else if (moreThanPageViewPerStory == true && ii > 0)
+				{
+				  sb.append(timeRelativeToPubDate+",");	   						
+				  sb.append(pv.getPageviews()+",");	   						
+				  sb.append(relativeVelocity+"\n");
+				}
+				*/
+				
+				// is pageView in the last 15 minutes.....
+				if (StoryUtil.isDateYounger(pv.getPageViewDate(), 15))
+						totalPageViewsLast15 += pv.getPageviews();
+						
 			}
 			
-			int velocity = (int) ((totalPageViews / timeDifference) * 60);			
-			return velocity;
+			
+			double timeDifference = StoryUtil.getTimeInApp(pubDate);	   					
+			int timeInApp = (int)timeDifference;
+			sd.setTimeInApp(timeInApp);
+			
+			
+			
+			int velocity =  StoryUtil.calculateVelocity(pageViewSets, timeDifference);
+			sd.setVelocity(velocity);
+			sd.setTrendFifteenMins(totalPageViewsLast15);
+			sd.setTotalPageViews(totalPageViews);
+			
+			// determine if story is actually older than 36 hours otherwise set to inactive and stop processing on it.....
+			if (timeInApp >  StoryUtil.MAX_AGE_OF_STORY)
+			{
+				sd.setActive("N");
+				return null;
+			}
+			sd.setActive("Y");
+
+			// clear this out before sending on the wire...
+		    storyDetailClient = new StoryDetailClient(sd.getStoryId(), sd.getPubDate(), 
+		    sd.getTimeInApp(), totalPageViews, sd.getVelocity(), sd.getTrendFifteenMins(), 
+		    sd.getActive());
+		    storyDetailClient.pageViewTrend = sb.toString(); // remove the last comma....
+		
+		
+		    return storyDetailClient;
 	}
+
+
+	@Override
+	public List<StoryDetailClient> getUpdatedStoryDetailsInBulk(String [] storyNames, long lastFetchedTime) {
+		
+		ArrayList updatedStoryList = new ArrayList();
+		
+		
+		// first check to see if the lastFetchedTime is greater than the last ingest date. If so, then we have nothing
+		// to update and can just return....
+		if (lastFetchedTime > GlobalVariableStorage.lastIngestDate.getTime() && GlobalVariableStorage.lastIngestDate.getTime() > 0)
+		{
+			return null;
+		}
 	
-	// returns the time in app of the storyId
-	//
-	// 
-	public double getTimeInAppRelativeToPageViewTime(Date pubDate, Date time2)
-	{
-		double timeDifference = 0.0;
-		timeDifference = (double)((time2.getTime() - pubDate.getTime())/(1000*60));
 		
-		// make sure time difference is always at least 1min to not skew velocity
-		if (timeDifference < 1.0)
-			timeDifference = 1.0;
+		 org.ap.storyvelocity.shared.StoryDetailClient storyDetailClient = null;
+		 List<StoryDetailClient> sdclientlist = new ArrayList<StoryDetailClient>();
+		 PersistenceManager pm = PMF.get().getPersistenceManager();
+		 
 		
-		return timeDifference;
+		
+		// first do a check to see if any client stories have been updated recently so we need to 
+		// update those for certain........
+		for (String story: storyNames) {
+			
+			if (GlobalVariableStorage.gaStoryMap.containsKey(story))
+			{
+				updatedStoryList.add(story);
+			}
+			
+		    try {
+			        
+	 			// do the query here because the map is empty....
+	         	Query q = pm.newQuery(StoryDetail.class, "storyId == storyIdParam AND active == 'Y'");
+		     	q.declareParameters("String storyIdParam");
+	    	    q.setRange(0, 1);
+			   	List<StoryDetail> results = (List<StoryDetail>) q.execute(story);
+			    // so for each updated story we need to get those story details....  
+			   	
+	    	     if (!results.isEmpty()) {
+	    		    for (StoryDetail sd : results) {
+	    		    	 // should only be one or none....
+	    		    	
+	    		      StoryDetailClient sdc = getDetailsForStoryId(sd);
+	    		      if (sdc != null)
+				        sdclientlist.add(sdc);
+	    		    }
+	    		  } else {
+	    		    // Handle "no results" case
+	       	    	  continue;
+	       	   	
+	    		  }
+							    
+			  }
+			  finally {
+			    	  
+			  }
+			
+			
+		}
+		  return sdclientlist;
 	}
-	
-	// returns the time in app of the storyId
-	//
-	// 
-	public double getTimeInApp(Date pubDate)
-	{
-		double timeDifference = 0.0;
-		Date today = new Date();
-		Calendar cal = Calendar.getInstance();
-		today = cal.getTime();
-		timeDifference = (double)((today.getTime() - pubDate.getTime())/(1000*60));
-		
-		// make sure time difference is always at least 1min to not skew velocity
-		if (timeDifference < 1.0)
-			timeDifference = 1.0;
-		
-		return timeDifference;
-	}
-	
-	// calculates whether or not the page view was in the last 15 minutes...
-	public boolean isDateYounger(Date pubDate, int value)
-	{
-		double timeDifference = 0.0;
-		Date today = new Date();
-		Calendar cal = Calendar.getInstance();
-		today = cal.getTime();
-		timeDifference = (double)((today.getTime() - pubDate.getTime())/(1000*60));
-		
-		if (timeDifference < value)
-			return true;
-		
-		return false;
-	}
-	
-	
-	
+
+
+	// not used....
 	@Override
 	public void removeStory(String storyId) throws NotLoggedInException {
 	    checkLoggedIn();
@@ -592,8 +523,11 @@ StoryService {
 	      }
 	    } finally {
 	      pm.close();
-	    }	}
+	    }	
+	}
 
+	
+	// not used
 	@Override
 	public List<StoryDetailClient> getStories() throws NotLoggedInException {
 	    checkLoggedIn();
@@ -673,6 +607,9 @@ StoryService {
 			   
 			   org.ap.storyvelocity.server.StoryDetail sdetail =  getStoryDetailById(ga_storyName);
 			   
+			   // clear the temporary gastory map for each ingestion.....
+			   GlobalVariableStorage.get().gaStoryMap.clear();
+			   
 			   if (sdetail == null)
 			   {
 				   sdetail = new org.ap.storyvelocity.server.StoryDetail(ga_storyName, ga_retrievaldate.getTime(), 
@@ -692,9 +629,11 @@ StoryService {
 					sdetail.setTotalPageViews(ga_pageview);
 					sdetail.setTrendFifteenMins(ga_pageview); // obviously this is within the last 15 minutes so need to set it here....
 					
-					double timeDifference = getTimeInApp(ga_retrievaldate);
-					int velocity = calculateVelocity(pageViewSets, timeDifference);
+					double timeDifference = StoryUtil.getTimeInApp(ga_retrievaldate);
+					int velocity =  StoryUtil.calculateVelocity(pageViewSets, timeDifference);
 					sdetail.setVelocity(velocity);
+					
+					GlobalVariableStorage.get().gaStoryMap.put(ga_storyName, sdetail);
 					
 			   }
 			   else
@@ -734,7 +673,7 @@ StoryService {
 					  totalPageViews += pvi.getPageviews();
 					  
 					  // look at the pageviewDate to see whether it's within the last 15...
-					  if (isDateYounger(pv.getPageViewDate(), 15))
+					  if (StoryUtil.isDateYounger(pv.getPageViewDate(), 15))
 					  {
 						  trendfifteenmins += pvi.getPageviews();
 					  }
@@ -745,7 +684,7 @@ StoryService {
 				   sdetail.setPubDate(pubDate.getTime());
 				   
 				   // after calculation here, make sure that we set the active flag to yes/no depending on age....
-				   if (isDateYounger(pv.getPageViewDate(), MAX_AGE_OF_STORY))
+				   if (StoryUtil.isDateYounger(pv.getPageViewDate(),  StoryUtil.MAX_AGE_OF_STORY))
 				   {
 					  sdetail.setActive("Y");
 				   
@@ -758,12 +697,15 @@ StoryService {
 				   sdetail.setTotalPageViews(totalPageViews);
 				   sdetail.setTrendFifteenMins(trendfifteenmins);
 					
-				   double timeDifference = getTimeInAppRelativeToPageViewTime(pubDate, ga_retrievaldate);
+				   double timeDifference = StoryUtil.getTimeInAppRelativeToPageViewTime(pubDate, ga_retrievaldate);
 					// do we calculate the last velocity or total velocity of all pageview sets???
-				   velocity = calculateSingularVelocity(totalPageViews, timeDifference);
+				   velocity =  StoryUtil.calculateSingularVelocity(totalPageViews, timeDifference);
 				   sdetail.setVelocity(velocity);
 			   }
-						
+			   
+			  // need to store old AP records here in db.
+			   GlobalVariableStorage.get().gaStoryMap.put(ga_storyName, sdetail);
+			   
 			  //tx.begin();
 		      pm.makePersistent(sdetail);
 		      recordsProcessed++;
@@ -783,6 +725,9 @@ StoryService {
 				}
 		      
 			} // end-for loop
+			
+			// set the last ingest date in global variable storage....
+			GlobalVariableStorage.lastIngestDate = new Date();
 			
 			// should make the total number processed..
 			updatedStoryIngestionTable(recordsProcessed, 1);

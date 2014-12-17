@@ -24,6 +24,7 @@ import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Label;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import com.google.gwt.user.client.Timer;
@@ -81,6 +82,8 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 	    final ProgressBar progressBar = new ProgressBar(20 ,ProgressBar.SHOW_TEXT);
 	    public static Timer progressTimer = null;
 	    
+	    private static boolean refreshInProgress = false;
+	    private static HashMap<String, String> storyIdMap = new HashMap();
 	    
 	    public void onModuleLoad() {
 	        // Check login status using login service.
@@ -252,17 +255,28 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		
 		private void refreshWatchListAfter15Mins() {
 	
-			//StoryDetailClient[] pVes = new StoryDetailClient[stories.size()];
-			//getStoryDetails("STORY1");
-			//updateTable(pVes);
 			Date firstFetchTime = new Date();
 			// initial sort type should be by velocity
+			refreshInProgress = true;
 			getStoryDetailsByBulk(numStoryCount, sortFilterType, firstFetchTime.getTime());
-
-			
+			refreshInProgress = false;
 		}
 		
 		
+		private void checkForUpdatedStories() {
+			
+			Date firstFetchTime = new Date();
+			// initial sort type should be by velocity
+			if (refreshInProgress == true)
+				return;
+			
+			getUpdatedStoryDetailsInBulk(String[] storyNames, long lastFetchedTime);	
+			
+			//getStoryDetailsByBulk(numStoryCount, sortFilterType, firstFetchTime.getTime());
+		}
+		
+		
+		/*
 		private void refreshWatchList() {
 			final int MAX_PRICE = 100; // $100
 			final double MAX_PRICE_CHANGE = 0.02; // +/- 2%
@@ -287,6 +301,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 
 			
 		}
+		*/
 		
 		private void addStory(final String storyId) {
 			    storyService.addStoryDetail(storyId, new AsyncCallback<Void>() {
