@@ -75,8 +75,8 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		public static StoryDetailClient[] pVes = null;
 
 		
-		private int numStoryCount = 10;
-		private int sortFilterType = 0;
+		private static int numStoryCount = 10;
+		private static int sortFilterType = 0;
 		
 	    private LoginInfo loginInfo = null;
 		private VerticalPanel loginPanel = new VerticalPanel();
@@ -140,7 +140,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 					lblStoryWatcher = new Label("Story Velocity Dashboard");
 					lblStoryWatcher.setStyleName("gwt-Label-StockWatcher");
 					
-					lastFetchedLabel = new Label("            ");
+					lastUpdatedLabel = new Label("XX            ");
 					lblCurrentStoryCount = new Label("Current Story Count: "+ numStoryCount);
 					lblCurrentStoryCount.setStyleName("gwt-Label-StockWatcher");
 					
@@ -148,7 +148,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 					lblCurrentStoryFilter.setStyleName("gwt-Label-StockWatcher");
 					
 					mainPanel.add(lblStoryWatcher);
-					mainPanel.add(lastFetchedLabel);
+					mainPanel.add(lastUpdatedLabel);
 					mainPanel.add(progressBar);
 					mainPanel.add(lblCurrentStoryCount);
 					mainPanel.add(lblCurrentStoryFilter);
@@ -659,7 +659,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		private void updateFeedPanel(String updatedDate)
 		{
 			// change the last update timestamp
-			lastFetchedLabel.setText("Last update : " + updatedDate);
+			//lastFetchedLabel.setText("Last update : " + updatedDate);
 		}
 		
 		
@@ -866,6 +866,11 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 				progressBar.setProgress(100);
 				stopProgressBar();
 			}
+			
+			Date lastFetchedDate = new Date();
+			// change the last update timestamp
+			lastUpdatedLabel.setText("Last updated : "
+					+ DateTimeFormat.getFormat("MMMM dd, yyyy HH:mm aa").format(lastFetchedDate));
 			
 		}
 
