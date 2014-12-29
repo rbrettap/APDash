@@ -151,7 +151,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 					mainPanel.add(lastUpdatedLabel);
 					mainPanel.add(progressBar);
 					mainPanel.add(lblCurrentStoryCount);
-					mainPanel.add(lblCurrentStoryFilter);
+					//mainPanel.add(lblCurrentStoryFilter);
 				}
 				
 				addPanel = new HorizontalPanel();
@@ -261,6 +261,8 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 					 			int x = pveslist.size();
 					 			
 					 			// sort velocity desc
+					 			sortFilterType = 0;
+					 			
 					 			Comparator<StoryDetailClient> velocityOrder =  new Comparator<StoryDetailClient>() {
 					 		        public int compare(StoryDetailClient s1, StoryDetailClient s2) {
 					 		            return s2.getVelocity() - s1.getVelocity();
@@ -281,6 +283,8 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 								storyFlexTable.clear();
 								int x = pveslist.size();
 					 			// sort pubDate desc
+								sortFilterType = 1;
+								
 					 			Comparator<StoryDetailClient> pubDateOrder =  new Comparator<StoryDetailClient>() {
 					 		        public int compare(StoryDetailClient s1, StoryDetailClient s2) {
 					 		            return (int)(s2.getPubDate() - s1.getPubDate());
@@ -301,6 +305,8 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 								storyFlexTable.clear();
 								int x = pveslist.size();
 					 			// sort totalPageView desc
+								sortFilterType = 2;
+								
 					 			Comparator<StoryDetailClient> pageViewOrder =  new Comparator<StoryDetailClient>() {
 					 		        public int compare(StoryDetailClient s1, StoryDetailClient s2) {
 					 		            return (int)(s2.getPageviews() - s1.getPageviews());
@@ -359,6 +365,8 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 								storyFlexTable.clear();
 								int x = pveslist.size();
 					 			// sort velocity asc
+								sortFilterType = 3;
+								
 					 			Comparator<StoryDetailClient> velocityOrder =  new Comparator<StoryDetailClient>() {
 					 		        public int compare(StoryDetailClient s1, StoryDetailClient s2) {
 					 		            return s1.getVelocity() - s2.getVelocity();
@@ -379,6 +387,8 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 								storyFlexTable.clear();
 								int x = pveslist.size();
 					 			// sort pubDate asc
+								sortFilterType = 4;
+								
 					 			Comparator<StoryDetailClient> pubDateOrder =  new Comparator<StoryDetailClient>() {
 					 		        public int compare(StoryDetailClient s1, StoryDetailClient s2) {
 					 		            return (int)(s1.getPubDate() - s2.getPubDate());
@@ -399,7 +409,8 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 								storyFlexTable.clear();
 								int x = pveslist.size();
 					 			//sort totalPageView asc
-					 			
+								sortFilterType = 5;
+								
 					 			Comparator<StoryDetailClient> pageViewOrder =  new Comparator<StoryDetailClient>() {
 					 		        public int compare(StoryDetailClient s1, StoryDetailClient s2) {
 					 		            return (int)(s1.getPageviews() - s2.getPageviews());
@@ -542,10 +553,6 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 				    storyFlexTable.getCellFormatter().addStyleName(0, 5, "watchListNumericColumn");
 				    storyFlexTable.getCellFormatter().addStyleName(0, 6, "watchListNumericColumn");
 				    //storyFlexTable.getCellFormatter().addStyleName(0, 7, "watchListRemoveColumn");
-				    
-
-				             
-				    
 				    
 					mainPanel.add(storyFlexTable);
 				}
@@ -979,7 +986,8 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 				}
 		      }
 		   }
-
+		   
+		   
 		   /**
 		    * create a custom key down handler which will call 
 		    * onKeyDown method when a key is down in textbox.
