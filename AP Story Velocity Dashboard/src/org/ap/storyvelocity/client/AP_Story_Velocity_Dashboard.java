@@ -5,6 +5,8 @@ import com.arcadiacharts.charts.linechart.ACLineChart;
 import com.arcadiacharts.charts.linechart.ACLineChartBuilder;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.KeyCodes;
@@ -14,6 +16,7 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.HTMLTable.Cell;
 import com.google.gwt.user.client.ui.InlineHTML;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.RootPanel;
@@ -24,6 +27,8 @@ import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Label;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -52,12 +57,13 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		private FlexTable storyFlexTable;
 		private HorizontalPanel addPanel;
 		private HorizontalPanel feedIngesterPanel;
-		private HorizontalPanel chartPanel;
+		private HorizontalPanel sortChartPanel;
 		private TextBox numStoryTextBox;
 		private Button addButton;
 		private Button feedIngesterButton;
 		private Button fetchButton;
 		private ListBox listBox;
+		private ListBox sortChartBox;
 		private Label lastUpdatedLabel;
 		private Label lastFetchedLabel;
 		private ArrayList <String> stories = new ArrayList<String>();  
@@ -66,6 +72,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		private Label lblStoryWatcher;
 		private Label lblCurrentStoryCount;
 		private Label lblCurrentStoryFilter;
+		public static StoryDetailClient[] pVes = null;
 
 		
 		private int numStoryCount = 10;
@@ -84,6 +91,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 	    
 	    private static boolean refreshInProgress = false;
 	    private static HashMap<String, String> storyIdMap = new HashMap();
+	    private static Date lastFetchedTime = new Date();
 	    
 	    public void onModuleLoad() {
 	        // Check login status using login service.
@@ -96,6 +104,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 	          public void onSuccess(LoginInfo result) {
 	            loginInfo = result;
 	            if(loginInfo.isLoggedIn()) {
+	            	storyIdMap.clear();
 	            	loadStoryWatcher();
 	            } else {
 	              loadLogin();
@@ -156,6 +165,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 						
 						addPanel.add(numStoryTextBox);
 						
+						/*
 						listBox = new ListBox();
 						listBox.addItem("velocity desc");
 						listBox.addItem("pubDate desc");
@@ -173,6 +183,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 						addButton.addClickHandler(new FetchFilterClickHandler());
 						addButton.setText("Update Story Filter");
 						addPanel.add(addButton);
+						*/
 				}
 				
 				feedIngesterPanel = new HorizontalPanel();
@@ -184,9 +195,10 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 					fetchButton.setStyleName("gwt-Button-Add");
 					fetchButton.addClickHandler(new ClickHandler() {
 						public void onClick(ClickEvent event) {
-							Date firstFetchTime = new Date();
+							// set the fetch time to the current date
+							lastFetchedTime = new Date();
 							// initial sort type should be by velocity
-							getStoryDetailsByBulk(numStoryCount, sortFilterType, firstFetchTime.getTime());
+							getStoryDetailsByBulk(numStoryCount, sortFilterType, lastFetchedTime.getTime());
 						}
 					});
 					fetchButton.setText("FETCH FROM SERVER");
@@ -206,16 +218,315 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 					
 				}
 				
+				sortChartPanel = new HorizontalPanel();
+				sortChartPanel.addStyleName("addPanel");
+				mainPanel.add(sortChartPanel);
+				{
+					sortChartBox = new ListBox();
+					sortChartBox.addItem("velocity desc");
+					sortChartBox.addItem("pubDate desc");
+					sortChartBox.addItem("total pageViews desc");
+					sortChartBox.addItem("pvs in the last 15 mins desc");	
+					sortChartBox.addItem("time in app desc");	
+					sortChartBox.addItem("velocity asc");
+					sortChartBox.addItem("pubDate asc");
+					sortChartBox.addItem("total pageViews asc");
+					sortChartBox.addItem("pvs in the last 15 mins asc");
+					sortChartBox.addItem("time in app asc");
+
+					    // Make enough room for all five items (setting this value to 1 turns it
+					    // into a drop-down list).
+					sortChartBox.setVisibleItemCount(1);
+					sortChartBox.addChangeHandler(new ChangeHandler() {
+					      @Override
+					      public void onChange(ChangeEvent event) {
+					    	 
+					    	int selectedIndex = sortChartBox.getSelectedIndex(); 
+					    	//Window.alert(selectedIndex+"");
+					    	
+					    	if (pVes.length < 0)
+					    	{
+					    		return;
+					    	}
+					    	// convert pVes to a collection....
+					    	ArrayList pveslist = new ArrayList();
+					    	for (int i = 0; i < pVes.length; i++)
+					    	{
+					    		pveslist.add((StoryDetailClient)pVes[i]);
+					    	}
+					    	
+					 		if (selectedIndex == 0)
+							{
+					 			storyFlexTable.clear();
+					 			int x = pveslist.size();
+					 			
+					 			// sort velocity desc
+					 			Comparator<StoryDetailClient> velocityOrder =  new Comparator<StoryDetailClient>() {
+					 		        public int compare(StoryDetailClient s1, StoryDetailClient s2) {
+					 		            return s2.getVelocity() - s1.getVelocity();
+					 		        }
+					 		    };
+					 		    Collections.sort(pveslist, velocityOrder);
+					 		    
+					 		    pVes = new StoryDetailClient[x];
+					 		    
+					 		    for (int i = 0; i < x; i++)
+					 		    {
+					 		      pVes[i] = (StoryDetailClient)pveslist.get(i);	
+					 		    }
+					 		   updateTable(pVes);
+							}
+							else if (selectedIndex == 1)
+							{
+								storyFlexTable.clear();
+								int x = pveslist.size();
+					 			// sort pubDate desc
+					 			Comparator<StoryDetailClient> pubDateOrder =  new Comparator<StoryDetailClient>() {
+					 		        public int compare(StoryDetailClient s1, StoryDetailClient s2) {
+					 		            return (int)(s2.getPubDate() - s1.getPubDate());
+					 		        }
+					 		    };
+					 		    Collections.sort(pveslist, pubDateOrder);
+					 		    
+					 		    pVes = new StoryDetailClient[x];
+					 		    
+					 		    for (int i = 0; i < x; i++)
+					 		    {
+					 		      pVes[i] = (StoryDetailClient)pveslist.get(i);	
+					 		    }
+					 		   updateTable(pVes);
+							}
+							else if (selectedIndex == 2)
+							{
+								storyFlexTable.clear();
+								int x = pveslist.size();
+					 			// sort totalPageView desc
+					 			Comparator<StoryDetailClient> pageViewOrder =  new Comparator<StoryDetailClient>() {
+					 		        public int compare(StoryDetailClient s1, StoryDetailClient s2) {
+					 		            return (int)(s2.getPageviews() - s1.getPageviews());
+					 		        }
+					 		    };
+					 		    Collections.sort(pveslist, pageViewOrder);
+					 		    
+					 		    pVes = new StoryDetailClient[x];
+					 		    
+					 		    for (int i = 0; i < x; i++)
+					 		    {
+					 		      pVes[i] = (StoryDetailClient)pveslist.get(i);	
+					 		    }
+					 		   updateTable(pVes);
+							}
+							else if (selectedIndex == 3)
+							{
+								storyFlexTable.clear();
+								int x = pveslist.size();
+					 			Comparator<StoryDetailClient> trend15order =  new Comparator<StoryDetailClient>() {
+					 		        public int compare(StoryDetailClient s1, StoryDetailClient s2) {
+					 		            return (int)(s2.getTrendFifteenMins() - s1.getTrendFifteenMins());
+					 		        }
+					 		    };
+					 		    Collections.sort(pveslist, trend15order);
+					 		    
+					 		    pVes = new StoryDetailClient[x];
+					 		    
+					 		    for (int i = 0; i < x; i++)
+					 		    {
+					 		      pVes[i] = (StoryDetailClient)pveslist.get(i);	
+					 		    }
+					 		   updateTable(pVes);
+							}
+							else if (selectedIndex == 4)
+							{
+								storyFlexTable.clear();
+								int x = pveslist.size();
+					 			Comparator<StoryDetailClient> timeInAppOrder =  new Comparator<StoryDetailClient>() {
+					 		        public int compare(StoryDetailClient s1, StoryDetailClient s2) {
+					 		            return (int)(s2.getTimeInApp() - s1.getTimeInApp());
+					 		        }
+					 		    };
+					 		    Collections.sort(pveslist, timeInAppOrder);
+					 		    
+					 		    pVes = new StoryDetailClient[x];
+					 		    
+					 		    for (int i = 0; i < x; i++)
+					 		    {
+					 		      pVes[i] = (StoryDetailClient)pveslist.get(i);	
+					 		    }
+					 		   updateTable(pVes);
+							}
+							else if (selectedIndex == 5)
+							{
+								storyFlexTable.clear();
+								int x = pveslist.size();
+					 			// sort velocity asc
+					 			Comparator<StoryDetailClient> velocityOrder =  new Comparator<StoryDetailClient>() {
+					 		        public int compare(StoryDetailClient s1, StoryDetailClient s2) {
+					 		            return s1.getVelocity() - s2.getVelocity();
+					 		        }
+					 		    };
+					 		    Collections.sort(pveslist, velocityOrder);
+					 		    
+					 		    pVes = new StoryDetailClient[x];
+					 		    
+					 		    for (int i = 0; i < x; i++)
+					 		    {
+					 		      pVes[i] = (StoryDetailClient)pveslist.get(i);	
+					 		    }
+					 		   updateTable(pVes);
+							}
+							else if (selectedIndex == 6)
+							{
+								storyFlexTable.clear();
+								int x = pveslist.size();
+					 			// sort pubDate asc
+					 			Comparator<StoryDetailClient> pubDateOrder =  new Comparator<StoryDetailClient>() {
+					 		        public int compare(StoryDetailClient s1, StoryDetailClient s2) {
+					 		            return (int)(s1.getPubDate() - s2.getPubDate());
+					 		        }
+					 		    };
+					 		    Collections.sort(pveslist, pubDateOrder);
+					 		    
+					 		    pVes = new StoryDetailClient[x];
+					 		    
+					 		    for (int i = 0; i < x; i++)
+					 		    {
+					 		      pVes[i] = (StoryDetailClient)pveslist.get(i);	
+					 		    }
+					 		   updateTable(pVes);
+							}
+							else if (selectedIndex == 7)
+							{
+								storyFlexTable.clear();
+								int x = pveslist.size();
+					 			//sort totalPageView asc
+					 			
+					 			Comparator<StoryDetailClient> pageViewOrder =  new Comparator<StoryDetailClient>() {
+					 		        public int compare(StoryDetailClient s1, StoryDetailClient s2) {
+					 		            return (int)(s1.getPageviews() - s2.getPageviews());
+					 		        }
+					 		    };
+					 		    Collections.sort(pveslist, pageViewOrder);
+					 		    
+					 		    pVes = new StoryDetailClient[x];
+					 		    
+					 		    for (int i = 0; i < x; i++)
+					 		    {
+					 		      pVes[i] = (StoryDetailClient)pveslist.get(i);	
+					 		    }
+					 		   updateTable(pVes);
+							}
+							else if (selectedIndex == 8)
+							{
+								storyFlexTable.clear();
+								int x = pveslist.size();
+								// sort pv15 asc
+					 			Comparator<StoryDetailClient> trend15order =  new Comparator<StoryDetailClient>() {
+					 		        public int compare(StoryDetailClient s1, StoryDetailClient s2) {
+					 		            return (int)(s1.getTrendFifteenMins() - s2.getTrendFifteenMins());
+					 		        }
+					 		    };
+					 		    Collections.sort(pveslist, trend15order);
+					 		    
+					 		    pVes = new StoryDetailClient[x];
+					 		    
+					 		    for (int i = 0; i < x; i++)
+					 		    {
+					 		      pVes[i] = (StoryDetailClient)pveslist.get(i);	
+					 		    }
+					 		   updateTable(pVes);
+							}
+							else if (selectedIndex == 9)
+							{
+								storyFlexTable.clear();
+								int x = pveslist.size();
+								// sort pv15 asc
+					 			Comparator<StoryDetailClient> timeInAppOrder =  new Comparator<StoryDetailClient>() {
+					 		        public int compare(StoryDetailClient s1, StoryDetailClient s2) {
+					 		            return (int)(s1.getTimeInApp() - s2.getTimeInApp());
+					 		        }
+					 		    };
+					 		    Collections.sort(pveslist, timeInAppOrder);
+					 		    
+					 		    pVes = new StoryDetailClient[x];
+					 		    
+					 		    for (int i = 0; i < x; i++)
+					 		    {
+					 		      pVes[i] = (StoryDetailClient)pveslist.get(i);	
+					 		    }
+					 		   updateTable(pVes);
+							}
+					      }
+					});
+				    sortChartPanel.add(sortChartBox);
+				    
+				}
 				
 				{
 					storyFlexTable = new FlexTable();
 					//Add these lines
 					storyFlexTable.setText(0, 0, "Story Title");
+					
+				    // add button to remove this stock from the list
+					/*
+					Button pubDateButton = new Button("Pub Date");
+					pubDateButton.addStyleName("watchListHeaderButton");
+					pubDateButton.addClickHandler(new ClickHandler() {
+					    public void onClick(ClickEvent event) {                    
+			
+					    	Window.alert("test1");
+					    	return;
+					    }
+					   });
+					
+					storyFlexTable.setWidget(0, 1, pubDateButton);   
+					*/
+					
 					storyFlexTable.setText(0, 1, "Pub Date");
 					storyFlexTable.setText(0, 2, "Time In App");
 					storyFlexTable.setText(0, 3, "Total PageViews");
+					
+					/*
+				    // add button to remove this stock from the list
+					Button totalPageViewsButton = new Button("Total PageViews");
+					totalPageViewsButton.addStyleName("watchListHeaderButton");
+					totalPageViewsButton.addClickHandler(new ClickHandler() {
+					    public void onClick(ClickEvent event) {                    
+			
+					    	Window.alert("test2");
+					    	return;
+					    }
+					   });
+					storyFlexTable.setWidget(0, 3, totalPageViewsButton); 
+					*/
+					
+					/*
+					Button velocityButton = new Button("Velocity = Est. PageViews/hr.");
+					velocityButton.addStyleName("watchListHeaderButton");
+					velocityButton.addClickHandler(new ClickHandler() {
+					public void onClick(ClickEvent event) {                    
+			
+					    	Window.alert("test3");
+					    	return;
+					    }
+					});
+					storyFlexTable.setWidget(0, 4, velocityButton); 
+					*/
 					storyFlexTable.setText(0, 4, "Velocity = Est. PageViews/hr.");
-					storyFlexTable.setText(0, 5, "PVs_Last_15_mins");
+					
+					
+				    /*
+					Button pv15Button = new Button("PVs_Last_15_mins");
+					pv15Button.addStyleName("watchListHeaderButton");
+					pv15Button.addClickHandler(new ClickHandler() {
+					 public void onClick(ClickEvent event) {                    
+			
+					    	Window.alert("test4");
+					    	return;
+					    }
+					});
+					storyFlexTable.setWidget(0, 5, pv15Button); 
+					*/
+					storyFlexTable.setText(0, 5, "PVs in the last 15 mins");
 					storyFlexTable.setText(0, 6, "Chart/Trend");
 					//storyFlexTable.setText(0, 7, "Active");
 					
@@ -231,6 +542,10 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 				    storyFlexTable.getCellFormatter().addStyleName(0, 5, "watchListNumericColumn");
 				    storyFlexTable.getCellFormatter().addStyleName(0, 6, "watchListNumericColumn");
 				    //storyFlexTable.getCellFormatter().addStyleName(0, 7, "watchListRemoveColumn");
+				    
+
+				             
+				    
 				    
 					mainPanel.add(storyFlexTable);
 				}
@@ -270,7 +585,9 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			if (refreshInProgress == true)
 				return;
 			
-			getUpdatedStoryDetailsInBulk(String[] storyNames, long lastFetchedTime);	
+			// todo 
+			// fix later rbrb
+			//getUpdatedStoryDetailsInBulk(storyNames, lastFetchedTime);	
 			
 			//getStoryDetailsByBulk(numStoryCount, sortFilterType, firstFetchTime.getTime());
 		}
@@ -539,7 +856,8 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		}
 		public void onSuccess(List<StoryDetailClient> result) {
 		       
-			StoryDetailClient[] pVes = new StoryDetailClient[result.size()];
+			pVes = null;
+			pVes = new StoryDetailClient[result.size()];
 
 			for (int i = 0; i < result.size(); i++)
 			{
@@ -613,8 +931,9 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		    
 		}
 
-		// sample click handlers....
-		
+
+
+
 		   /** 
 		    * create a custom click handler which will call 
 		    * onClick method when button is clicked.
