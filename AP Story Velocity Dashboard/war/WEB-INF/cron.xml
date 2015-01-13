@@ -2,12 +2,12 @@
 <cronentries>
 <cron>
         <url>/ap_story_velocity_dashboard/cronservlet</url>
-        <description>job to fetch google analytics every 10 minutes</description>
-        <schedule>every 10 minutes</schedule>
+        <description>job to fetch google analytics every 5 minutes</description>
+        <schedule>every 5 minutes</schedule>
 </cron>
 <cron>
         <url>/ap_story_velocity_dashboard/deletecronservlet</url>
         <description>job to delete old stories</description>
-        <schedule>every 45 minutes</schedule>
+        <schedule>every 30 minutes</schedule>
 </cron>
 </cronentries>

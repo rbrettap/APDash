@@ -21,4 +21,6 @@ public interface StoryServiceAsync {
 	  public void getUpdatedStoryDetailsInBulk(String[] storyNames, long lastFetchedTime, AsyncCallback<List<StoryDetailClient>> async);	
 
 	  public void fetchRealTimeAnalytics(AsyncCallback<String> async);
+	  public void getCronJobSettings(AsyncCallback<String> async) throws NotLoggedInException;
+	  
 }

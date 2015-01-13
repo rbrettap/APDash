@@ -20,6 +20,8 @@ public class StoryUtil {
 	public static Date vstoryDetailMapFetchAsc = new Date(0);
 	public static Date pdstoryDetailMapFetchAsc = new Date(0);
 	public static Date tpvstoryDetailMapFetchAsc = new Date(0);
+	public static Date pvlast15DetailMapFetchDesc = new Date(0);
+	public static Date pvlast15DetailMapFetchAsc = new Date(0);
 	
 	public static Date getStoryDetailMapFetch(int sorttype)
 	{
@@ -48,6 +50,14 @@ public class StoryUtil {
 		else if (sorttype == 5)
 		{
 			storyDetailMapFetch = tpvstoryDetailMapFetchAsc;
+		}
+		else if (sorttype == 6)
+		{
+			storyDetailMapFetch = pvlast15DetailMapFetchDesc;
+		}
+		else if (sorttype == 7)
+		{
+			storyDetailMapFetch = pvlast15DetailMapFetchAsc;
 		}
 		return storyDetailMapFetch;
 	}
@@ -80,6 +90,14 @@ public class StoryUtil {
 		else if (sorttype == 5)
 		{
 			sortOrderString = "totalPageViews asc";
+		}
+		else if (sorttype == 6)
+		{
+			sortOrderString = "trendfifteenmins desc";
+		}
+		else if (sorttype == 7)
+		{
+			sortOrderString = "trendfifteenmins asc";
 		}
 		return sortOrderString;
 	}

@@ -32,6 +32,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
+import com.google.gwt.user.client.Cookies;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Random;
 import com.google.gwt.i18n.client.DateTimeFormat;
@@ -205,16 +206,21 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 					feedIngesterPanel.add(fetchButton);
 					feedIngesterPanel.add(new InlineHTML("    "));
 
-					feedIngesterButton = new Button("Get Realtime Data");
+					// uncomment the following in development...
+					/*feedIngesterButton = new Button("Get Realtime Data");
 					feedIngesterButton.setStyleName("gwt-Button-Add");
 					feedIngesterButton.addClickHandler(new ClickHandler() {
 						public void onClick(ClickEvent event) {
 							fetchRealTimeAnalytics();
 						}
 					});
+					
+					.
 					feedIngesterButton.setText("Fetch Realtime Data into Server");
 					feedIngesterPanel.add(feedIngesterButton);
 					feedIngesterPanel.add(new InlineHTML("    "));
+					 * 
+					 */
 					
 				}
 				
@@ -326,6 +332,9 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 							{
 								storyFlexTable.clear();
 								int x = pveslist.size();
+								// sort pageviewslast15 mins
+								sortFilterType = 6;
+								
 					 			Comparator<StoryDetailClient> trend15order =  new Comparator<StoryDetailClient>() {
 					 		        public int compare(StoryDetailClient s1, StoryDetailClient s2) {
 					 		            return (int)(s2.getTrendFifteenMins() - s1.getTrendFifteenMins());
@@ -430,6 +439,8 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 							{
 								storyFlexTable.clear();
 								int x = pveslist.size();
+								
+								sortFilterType = 7;
 								// sort pv15 asc
 					 			Comparator<StoryDetailClient> trend15order =  new Comparator<StoryDetailClient>() {
 					 		        public int compare(StoryDetailClient s1, StoryDetailClient s2) {
@@ -466,6 +477,9 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 					 		    }
 					 		   updateTable(pVes);
 							}
+					 		
+					 		// set the sortFilter here......
+					 		Cookies.setCookie("sortFilterType",  sortFilterType+"");
 					      }
 					});
 				    sortChartPanel.add(sortChartBox);
@@ -560,7 +574,26 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			
 			Date firstFetchTime = new Date();
 			// initial sort type should be by velocity
-			getStoryDetailsByBulk(numStoryCount, 0, firstFetchTime.getTime());
+			
+			String cookieSortFilter = Cookies.getCookie("sortFilterType");
+			
+			if (cookieSortFilter != null)
+			{
+				int _sortFilterType = Integer.parseInt(cookieSortFilter);
+				
+				if (_sortFilterType > 0 && _sortFilterType < 10)
+				{
+					sortFilterType = _sortFilterType;
+				}
+				else
+				{
+					sortFilterType = 0;
+				}
+				
+			}
+			
+			
+			getStoryDetailsByBulk(numStoryCount, sortFilterType, firstFetchTime.getTime());
 			
 			// setup timer to refresh list automatically
 			Timer refreshTimer = new Timer() {
@@ -580,6 +613,21 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			Date firstFetchTime = new Date();
 			// initial sort type should be by velocity
 			refreshInProgress = true;
+			
+			String cookieSortFilter = Cookies.getCookie("sortFilterType");
+			
+			if (cookieSortFilter != null)
+			{
+				int _sortFilterType = Integer.parseInt(cookieSortFilter);
+				
+				if (_sortFilterType > 0 && _sortFilterType < 10)
+				{
+					sortFilterType = _sortFilterType;
+				}
+				
+			}
+			
+			
 			getStoryDetailsByBulk(numStoryCount, sortFilterType, firstFetchTime.getTime());
 			refreshInProgress = false;
 		}
@@ -980,6 +1028,14 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 				{
 		 			lblCurrentStoryFilter.setText("Current Story Filter: totalPageViews ascending");
 				}
+				else if (sortFilterType == 6)
+				{
+		 			lblCurrentStoryFilter.setText("Current Story Filter: totalPageViews ascending");
+				}
+				else if (sortFilterType == 7)
+				{
+		 			lblCurrentStoryFilter.setText("Current Story Filter: totalPageViews ascending");
+				}
 				else
 				{
 					
@@ -1006,6 +1062,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		        	 }
 		        	 
 		        	 lblCurrentStoryCount.setText("Current Story Count: "+ numStoryCount);
+		        	 numStoryTextBox.setText("");
 		         }
 		      }
 		   }

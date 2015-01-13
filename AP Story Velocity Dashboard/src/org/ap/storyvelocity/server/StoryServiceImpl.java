@@ -256,6 +256,22 @@ StoryService {
 	    				 StoryUtil.filteredStoryDetailMap.put("totalPageViewsasc", results);
 	    				 StoryUtil.tpvstoryDetailMapFetchAsc = new Date();
 	    			}
+	    			else if (sorttype == 6)
+	    			{
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("pvlast15desc"))
+	    					 StoryUtil.filteredStoryDetailMap.remove("pvlast15desc");
+	    				
+	    				 StoryUtil.filteredStoryDetailMap.put("pvlast15desc", results);
+	    				 StoryUtil.pvlast15DetailMapFetchDesc = new Date();
+	    			}
+	    			else if (sorttype == 7)
+	    			{
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("pvlast15asc"))
+	    					 StoryUtil.filteredStoryDetailMap.remove("pvlast15asc");
+	    				
+	    				 StoryUtil.filteredStoryDetailMap.put("pvlast15asc", results);
+	    				 StoryUtil.pvlast15DetailMapFetchAsc = new Date();
+	    			}
 	    	  }
 	    	  else
 	    	  {
@@ -288,6 +304,16 @@ StoryService {
 	    			{
 	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("totalPageViewsasc"))
 	    					results = (List<StoryDetail>)( StoryUtil.filteredStoryDetailMap.get("totalPageViewsasc"));
+	    			}
+	    			else if (sorttype == 6)
+	    			{
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("pvlast15desc"))
+	    					results = (List<StoryDetail>)( StoryUtil.filteredStoryDetailMap.get("pvlast15desc"));
+	    			}
+	    			else if (sorttype == 7)
+	    			{
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("pvlast15asc"))
+	    					results = (List<StoryDetail>)( StoryUtil.filteredStoryDetailMap.get("pvlast15asc"));
 	    			}
 	    	  }
 	    	  
@@ -578,6 +604,17 @@ StoryService {
 		StoryAnalyticsAPI storyAnaltyicsAPI = StoryAnalyticsAPI.getInstance();
 		storyAnaltyicsAPI.getRealtimeQuery(numResults);
 		addGADetailsToServer();
+
+		return null;
+	}
+	
+	
+	@Override
+	public String getCronJobSettings() throws NotLoggedInException {
+		
+		// use this method to fetch the last cron job run and to update the db to make sure
+		// the cron job frequency is run correctly....
+
 
 		return null;
 	}
