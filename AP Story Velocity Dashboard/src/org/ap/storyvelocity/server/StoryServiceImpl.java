@@ -192,18 +192,76 @@ StoryService {
 		
 		 PersistenceManager pm = PMF.get().getPersistenceManager();
 		 List<StoryDetailClient> sdclientlist = new ArrayList<StoryDetailClient>();
+  	     String keyString = "";
+  	     Date mappingDate = new Date(0);
+  	     
+			if (sorttype == 0)
+			{
+				keyString = "velocitydesc" + numResults;
+				mappingDate = StoryUtil.storyDetailMapFetch;
+			}
+			else if (sorttype == 1)
+			{
+				keyString = "pubDatedesc" + numResults;
+				mappingDate = StoryUtil.pdstoryDetailMapFetchDesc;
+			}
+			else if (sorttype == 2)
+			{
+				keyString = "totalPageViewsdesc" + numResults;
+				mappingDate = StoryUtil.tpvstoryDetailMapFetchDesc;
+			}
+			else if (sorttype == 3)
+			{
+				keyString = "velocityasc" + numResults;
+				mappingDate = StoryUtil.vstoryDetailMapFetchAsc;
+			}
+			else if (sorttype == 4)
+			{
+				keyString = "pubDateasc" + numResults;
+				mappingDate = StoryUtil.pdstoryDetailMapFetchAsc;
+				
+			}
+			else if (sorttype == 5)
+			{
+				keyString = "totalPageViewsasc" + numResults;
+				mappingDate = StoryUtil.tpvstoryDetailMapFetchAsc;
+			}
+			else if (sorttype == 6)
+			{
+				keyString = "pvlast15desc" + numResults;
+				mappingDate = StoryUtil.pvlast15DetailMapFetchDesc;
+			}
+			else if (sorttype == 7)
+			{
+				keyString = "pvlast15asc" + numResults;
+				mappingDate = StoryUtil.pvlast15DetailMapFetchAsc;
+			}
+			else if (sorttype == 8)
+			{
+				keyString = "lastupdateddesc" + numResults;
+				mappingDate = StoryUtil.storyLastUpdatedMapFetchDesc;
+			}
+			else if (sorttype == 9)
+			{
+				keyString = "lastupdatedasc" + numResults;
+				mappingDate = StoryUtil.storyLastUpdatedMapFetchAsc;
+			}
+  	     
 
 	      try {
-		        
+
 	    	  //Key key = KeyFactory.createKey(StoryDetail.class.getSimpleName(), storyId);
 			  //org.ap.storyvelocity.server.StoryDetail e = pm.getObjectById(org.ap.storyvelocity.server.StoryDetail.class, key);
 	    	  List<StoryDetail> results = null;
 
-	    	  // turn off caching for now....
-	    	  if (!StoryUtil.isDateYounger( StoryUtil.storyDetailMapFetch, 1))
+	    	  // storymap must contain the cache results or 
+	    	  // had the cache results and be older than 2 minutes....
+	    	  
+	    	  if (!StoryUtil.filteredStoryDetailMap.containsKey(keyString) || 
+	    			  ( StoryUtil.filteredStoryDetailMap.containsKey(keyString) && !StoryUtil.isDateYounger(mappingDate, 2)))
 	    	  {
 	    			// do the query here because the map is empty....
-	  	    	    Query q = pm.newQuery(StoryDetail.class, "active == 'Y' || active == 'YES'");
+	  	    	    Query q = pm.newQuery(StoryDetail.class, "active == 'Y'");
 	  	    	    //q.declareParameters("String activeFlagParam");
 		    	    q.setOrdering(sortOrderString);
 		    	    q.setRange(0, numResults);
@@ -211,113 +269,90 @@ StoryService {
 	    		  
 	    			if (sorttype == 0)
 	    			{
-	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("velocitydesc"))
-	    					 StoryUtil.filteredStoryDetailMap.remove("velocitydesc");
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey(keyString))
+	    					 StoryUtil.filteredStoryDetailMap.remove(keyString);
 	    				
-	    				 StoryUtil.filteredStoryDetailMap.put("velocitydesc", results);
+	    				 StoryUtil.filteredStoryDetailMap.put(keyString, results);
 	    				 StoryUtil.vstoryDetailMapFetchDesc = new Date();
 	    				
 	    			}
 	    			else if (sorttype == 1)
 	    			{
-	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("pubDatedesc"))
-	    					 StoryUtil.filteredStoryDetailMap.remove("pubDatedesc");
-	    				 StoryUtil.filteredStoryDetailMap.put("pubDatedesc", results);
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey(keyString))
+	    					 StoryUtil.filteredStoryDetailMap.remove(keyString);
+	    				 StoryUtil.filteredStoryDetailMap.put(keyString, results);
 	    				 StoryUtil.pdstoryDetailMapFetchDesc = new Date();
 	    			}
 	    			else if (sorttype == 2)
 	    			{
-	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("totalPageViewsdesc"))
-	    					 StoryUtil.filteredStoryDetailMap.remove("totalPageViewsdesc");
-	    				 StoryUtil.filteredStoryDetailMap.put("totalPageViewsdesc", results);
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey(keyString))
+	    					 StoryUtil.filteredStoryDetailMap.remove(keyString);
+	    				 StoryUtil.filteredStoryDetailMap.put(keyString, results);
 	    				 StoryUtil.tpvstoryDetailMapFetchDesc = new Date();
 	    			}
 	    			else if (sorttype == 3)
 	    			{
-	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("velocityasc"))
-	    					 StoryUtil.filteredStoryDetailMap.remove("velocityasc");
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey(keyString))
+	    					 StoryUtil.filteredStoryDetailMap.remove(keyString);
 	    				
-	    				 StoryUtil.filteredStoryDetailMap.put("velocityasc", results);
+	    				 StoryUtil.filteredStoryDetailMap.put(keyString, results);
 	    				 StoryUtil.vstoryDetailMapFetchAsc = new Date();
 	    			}
 	    			else if (sorttype == 4)
 	    			{
-	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("pubDateasc"))
-	    					 StoryUtil.filteredStoryDetailMap.remove("pubDateasc");
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey(keyString))
+	    					 StoryUtil.filteredStoryDetailMap.remove(keyString);
 	    				
-	    				 StoryUtil.filteredStoryDetailMap.put("pubDateasc", results);
+	    				 StoryUtil.filteredStoryDetailMap.put(keyString, results);
 	    				 StoryUtil.pdstoryDetailMapFetchAsc = new Date();
 	    			}
 	    			else if (sorttype == 5)
 	    			{
-	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("totalPageViewsasc"))
-	    					 StoryUtil.filteredStoryDetailMap.remove("totalPageViewsasc");
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey(keyString))
+	    					 StoryUtil.filteredStoryDetailMap.remove(keyString);
 	    				
-	    				 StoryUtil.filteredStoryDetailMap.put("totalPageViewsasc", results);
+	    				 StoryUtil.filteredStoryDetailMap.put(keyString, results);
 	    				 StoryUtil.tpvstoryDetailMapFetchAsc = new Date();
 	    			}
 	    			else if (sorttype == 6)
 	    			{
-	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("pvlast15desc"))
-	    					 StoryUtil.filteredStoryDetailMap.remove("pvlast15desc");
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey(keyString))
+	    					 StoryUtil.filteredStoryDetailMap.remove(keyString);
 	    				
-	    				 StoryUtil.filteredStoryDetailMap.put("pvlast15desc", results);
+	    				 StoryUtil.filteredStoryDetailMap.put(keyString, results);
 	    				 StoryUtil.pvlast15DetailMapFetchDesc = new Date();
 	    			}
 	    			else if (sorttype == 7)
 	    			{
-	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("pvlast15asc"))
-	    					 StoryUtil.filteredStoryDetailMap.remove("pvlast15asc");
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey(keyString))
+	    					 StoryUtil.filteredStoryDetailMap.remove(keyString);
 	    				
-	    				 StoryUtil.filteredStoryDetailMap.put("pvlast15asc", results);
+	    				 StoryUtil.filteredStoryDetailMap.put(keyString, results);
 	    				 StoryUtil.pvlast15DetailMapFetchAsc = new Date();
+	    			}
+	    			else if (sorttype == 8)
+	    			{
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey(keyString))
+	    					 StoryUtil.filteredStoryDetailMap.remove(keyString);
+	    				
+	    				 StoryUtil.filteredStoryDetailMap.put(keyString, results);
+	    				 StoryUtil.storyLastUpdatedMapFetchDesc = new Date();
+	    			}
+	    			else if (sorttype == 9)
+	    			{
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey(keyString))
+	    					 StoryUtil.filteredStoryDetailMap.remove(keyString);
+	    				
+	    				 StoryUtil.filteredStoryDetailMap.put(keyString, results);
+	    				 StoryUtil.storyLastUpdatedMapFetchAsc = new Date();
 	    			}
 	    	  }
 	    	  else
 	    	  {
-	    			if (sorttype == 0)
-	    			{
-	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("velocitydesc"))
-	    					 results = (List<StoryDetail>)( StoryUtil.filteredStoryDetailMap.get("velocitydesc"));
-	    			}
-	    			else if (sorttype == 1)
-	    			{
-	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("pubDatedesc"))
-	    					results = (List<StoryDetail>)( StoryUtil.filteredStoryDetailMap.get("pubDatedesc"));
-	    			}
-	    			else if (sorttype == 2)
-	    			{
-	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("totalPageViewsdesc"))
-	    					results = (List<StoryDetail>)( StoryUtil.filteredStoryDetailMap.get("totalPageViewsdesc"));
-	    			}
-	    			else if (sorttype == 3)
-	    			{
-	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("velocityasc"))
-	    					results = (List<StoryDetail>)( StoryUtil.filteredStoryDetailMap.get("velocityasc"));
-	    			}
-	    			else if (sorttype == 4)
-	    			{
-	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("pubDateasc"))
-	    					results = (List<StoryDetail>)( StoryUtil.filteredStoryDetailMap.get("pubDateasc"));
-	    			}
-	    			else if (sorttype == 5)
-	    			{
-	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("totalPageViewsasc"))
-	    					results = (List<StoryDetail>)( StoryUtil.filteredStoryDetailMap.get("totalPageViewsasc"));
-	    			}
-	    			else if (sorttype == 6)
-	    			{
-	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("pvlast15desc"))
-	    					results = (List<StoryDetail>)( StoryUtil.filteredStoryDetailMap.get("pvlast15desc"));
-	    			}
-	    			else if (sorttype == 7)
-	    			{
-	    				if ( StoryUtil.filteredStoryDetailMap.containsKey("pvlast15asc"))
-	    					results = (List<StoryDetail>)( StoryUtil.filteredStoryDetailMap.get("pvlast15asc"));
-	    			}
+	    			if ( StoryUtil.filteredStoryDetailMap.containsKey(keyString))
+	    			   results = (List<StoryDetail>)( StoryUtil.filteredStoryDetailMap.get(keyString));
 	    	  }
-	    	  
-	    	
+
 	    	     if (!results.isEmpty()) {
 	    		    for (StoryDetail sd : results) {
 	    		    	 // should only be one or none....
@@ -369,6 +404,7 @@ StoryService {
 		   
 		   // need to calculate timeInApp
 		   Date pubDate = new Date();
+		   Date lastUpdatedDate = new Date();
 		   
 		   // build the chart buffer...
 		   StringBuffer sb = new StringBuffer();
@@ -398,6 +434,14 @@ StoryService {
 				{
 					pubDate =  pv.getPageViewDate();
 				}
+				else
+				{
+					   if (pv.getPageViewDate().before(pubDate))
+					   {
+						   pubDate = pv.getPageViewDate();
+					   }
+				 }
+
 				
 				totalPageViews += pv.getPageviews();
 				
@@ -405,7 +449,7 @@ StoryService {
 				int relativeVelocity =  StoryUtil.calculateSingularVelocity(totalPageViews, timeRelativeToPubDate);
 				
 				// basically velocity is much closer if time relative to pub date is not at time 0.
-				if (timeRelativeToPubDate > 5)
+				if (timeRelativeToPubDate > 2)
 				{
 				  sb.append(timeRelativeToPubDate+",");	   						
 				  //sb.append(pv.getPageviews()+",");	   						
@@ -430,7 +474,9 @@ StoryService {
 				// is pageView in the last 15 minutes.....
 				if (StoryUtil.isDateYounger(pv.getPageViewDate(), 15))
 						totalPageViewsLast15 += pv.getPageviews();
-						
+				
+				// set the last updated date to the last pageViewDate....
+				lastUpdatedDate = pv.getPageViewDate();		
 			}
 			
 			
@@ -444,6 +490,8 @@ StoryService {
 			sd.setVelocity(velocity);
 			sd.setTrendFifteenMins(totalPageViewsLast15);
 			sd.setTotalPageViews(totalPageViews);
+			sd.setPubDate(pubDate.getTime());
+			sd.setLastUpdatedDate(lastUpdatedDate.getTime());
 			
 			// determine if story is actually older than 36 hours otherwise set to inactive and stop processing on it.....
 			if (timeInApp >  StoryUtil.MAX_AGE_OF_STORY)
@@ -454,7 +502,7 @@ StoryService {
 			sd.setActive("Y");
 
 			// clear this out before sending on the wire...
-		    storyDetailClient = new StoryDetailClient(sd.getStoryId(), sd.getPubDate(), 
+		    storyDetailClient = new StoryDetailClient(sd.getStoryId(), sd.getPubDate(), sd.getLastUpdatedDate(),
 		    sd.getTimeInApp(), totalPageViews, sd.getVelocity(), sd.getTrendFifteenMins(), 
 		    sd.getActive());
 		    storyDetailClient.pageViewTrend = sb.toString(); // remove the last comma....
@@ -599,7 +647,7 @@ StoryService {
 	@Override
 	public String fetchRealTimeAnalytics() throws NotLoggedInException {
 		
-		int numResults = 10;
+		int numResults = 15;
 		
 		StoryAnalyticsAPI storyAnaltyicsAPI = StoryAnalyticsAPI.getInstance();
 		storyAnaltyicsAPI.getRealtimeQuery(numResults);
@@ -702,11 +750,20 @@ StoryService {
 				   
 				   for (int i = 0; i < pageViewSets.size(); i++)
 				   {
+					  PageView pvi =  (PageView)pageViewSets.get(i);
+ 
 					  if (i == 0)
    					  {
-   							pubDate =  pv.getPageViewDate();
-   					  }  
-					  PageView pvi =  (PageView)pageViewSets.get(i);
+   							pubDate =  pvi.getPageViewDate();
+   					  }
+					  else
+					  {
+						   if (pvi.getPageViewDate().before(pubDate))
+						   {
+							   pubDate = pvi.getPageViewDate();
+						   }
+					  }
+					  
 					  totalPageViews += pvi.getPageviews();
 					  
 					  // look at the pageviewDate to see whether it's within the last 15...

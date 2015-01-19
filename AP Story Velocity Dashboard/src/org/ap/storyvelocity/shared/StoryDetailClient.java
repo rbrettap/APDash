@@ -7,6 +7,7 @@ public class StoryDetailClient implements Serializable
 {
 	private String storyId;
 	private long pubDate;
+	private long lastUpdatedDate;
 	private int timeInApp;
 	private int pageviews;
 	private int velocity; 
@@ -20,7 +21,7 @@ public class StoryDetailClient implements Serializable
 	{
 	}
 
-	public StoryDetailClient(String storyId, long pubDate, int timeInApp, int pageviews, int velocity, int trendfifteenmins, String active)
+	public StoryDetailClient(String storyId, long pubDate, long lastUpdatedDate, int timeInApp, int pageviews, int velocity, int trendfifteenmins, String active)
 	{
 		this.storyId = storyId;
 		this.pubDate = pubDate;
@@ -29,6 +30,7 @@ public class StoryDetailClient implements Serializable
 		this.velocity = velocity;
 		this.trendfifteenmins = trendfifteenmins;
 		this.active = active;
+		this.lastUpdatedDate = lastUpdatedDate;
 	}
 
 	public String getStoryId()
@@ -41,6 +43,14 @@ public class StoryDetailClient implements Serializable
 		this.storyId = storyId;
 	}
 
+	public Long getLastUpdatedDate() {
+		return lastUpdatedDate;
+	}
+
+	public void setLastUpdatedDate(Long lastUpdatedDate) {
+		this.lastUpdatedDate = lastUpdatedDate;
+	}
+	
 	public Long getPubDate() {
 		return pubDate;
 	}

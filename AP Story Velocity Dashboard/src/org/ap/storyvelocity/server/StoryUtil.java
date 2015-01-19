@@ -22,6 +22,8 @@ public class StoryUtil {
 	public static Date tpvstoryDetailMapFetchAsc = new Date(0);
 	public static Date pvlast15DetailMapFetchDesc = new Date(0);
 	public static Date pvlast15DetailMapFetchAsc = new Date(0);
+	public static Date storyLastUpdatedMapFetchDesc = new Date(0);
+	public static Date storyLastUpdatedMapFetchAsc = new Date(0);
 	
 	public static Date getStoryDetailMapFetch(int sorttype)
 	{
@@ -58,6 +60,14 @@ public class StoryUtil {
 		else if (sorttype == 7)
 		{
 			storyDetailMapFetch = pvlast15DetailMapFetchAsc;
+		}
+		else if (sorttype == 8)
+		{
+			storyDetailMapFetch = storyLastUpdatedMapFetchDesc;
+		}
+		else if (sorttype == 9)
+		{
+			storyDetailMapFetch = storyLastUpdatedMapFetchAsc;
 		}
 		return storyDetailMapFetch;
 	}
@@ -98,6 +108,14 @@ public class StoryUtil {
 		else if (sorttype == 7)
 		{
 			sortOrderString = "trendfifteenmins asc";
+		}
+		else if (sorttype == 8)
+		{
+			sortOrderString = "lastUpdatedDate desc";
+		}
+		else if (sorttype == 9)
+		{
+			sortOrderString = "lastUpdatedDate asc";
 		}
 		return sortOrderString;
 	}
