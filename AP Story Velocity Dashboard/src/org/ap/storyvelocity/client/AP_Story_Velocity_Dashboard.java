@@ -948,6 +948,11 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		       
 			pVes = null;
 			pVes = new StoryDetailClient[result.size()];
+			
+			for (int i = 1; i < storyFlexTable.getRowCount(); i++)
+			{
+				storyFlexTable.removeRow(i);
+			}
 
 			for (int i = 0; i < result.size(); i++)
 			{
