@@ -446,6 +446,12 @@ StoryService {
 				totalPageViews += pv.getPageviews();
 				
 				int timeRelativeToPubDate = (int)StoryUtil.getTimeInAppRelativeToPageViewTime(pubDate, pv.getPageViewDate());
+				sb.append(timeRelativeToPubDate+",");	   						
+				sb.append(pv.getPageviews()+"\n");
+				
+				
+				/* this is for velocity in chart....
+				int timeRelativeToPubDate = (int)StoryUtil.getTimeInAppRelativeToPageViewTime(pubDate, pv.getPageViewDate());
 				int relativeVelocity =  StoryUtil.calculateSingularVelocity(totalPageViews, timeRelativeToPubDate);
 				
 				// basically velocity is much closer if time relative to pub date is not at time 0.
@@ -455,6 +461,7 @@ StoryService {
 				  //sb.append(pv.getPageviews()+",");	   						
 				  sb.append(relativeVelocity+"\n");
 				}
+				*/
 				
 				/*
 				if (moreThanPageViewPerStory == false && ii == 0)

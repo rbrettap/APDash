@@ -12,7 +12,7 @@ public class StoryUtil {
 	public static HashMap<String, StoryDetail> storyDetailMap = new HashMap<String, StoryDetail>();
 	public static HashMap<String, List<StoryDetail>> filteredStoryDetailMap = new HashMap<String, List<StoryDetail>>();
 
-	public static int MAX_AGE_OF_STORY = 2160; // represents 36 hours in minutes....
+	public static int MAX_AGE_OF_STORY = 1440; // represents 24 hours in minutes....
 	public static Date storyDetailMapFetch = new Date(0);
 	public static Date vstoryDetailMapFetchDesc = new Date(0);
 	public static Date pdstoryDetailMapFetchDesc = new Date(0);

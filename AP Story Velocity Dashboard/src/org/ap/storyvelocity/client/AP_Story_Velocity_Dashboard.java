@@ -859,7 +859,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			
 			//List pageViewSets = storyPageView.getPageviews();
 			String data = storyPageView.pageViewTrend;			 
-			String  myData = "Time in App, Velocity\n"+data;
+			String  myData = "Time in App, PageViews\n"+data;
 			
 			ACLineChart chart;
 
@@ -867,7 +867,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 				   chart =  new ACLineChartBuilder()
 				    .setWidth(300)
 				    .setHeight(200)
-			        .setTitle("Story Velocity = Est.PageViews/Hr")
+			        .setTitle("Story PageViews")
 			        .setData(myData)
 			        .build();
 				   
