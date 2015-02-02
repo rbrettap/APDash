@@ -1,8 +1,10 @@
 package org.ap.storyvelocity.client;
 
+import com.arcadiacharts.axis.AxisIdentity;
 import com.arcadiacharts.charts.ChartException;
 import com.arcadiacharts.charts.linechart.ACLineChart;
 import com.arcadiacharts.charts.linechart.ACLineChartBuilder;
+import com.arcadiacharts.model.axis.AxisType;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ChangeEvent;
@@ -857,9 +859,11 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		{
 			HorizontalPanel chartPanel = new HorizontalPanel();
 			
-			//List pageViewSets = storyPageView.getPageviews();
+			List pageViewSets = storyPageView.getPageviews();
 			String data = storyPageView.pageViewTrend;			 
 			String  myData = "Time in App, PageViews\n"+data;
+			
+			
 			
 			ACLineChart chart;
 
@@ -869,6 +873,10 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 				    .setHeight(200)
 			        .setTitle("Story PageViews")
 			        .setData(myData)
+			        .setAxisType(AxisIdentity.X_AXIS, AxisType.LINEAR)
+			        .setAxisMinimumAsNumber( AxisIdentity.X_AXIS, number )
+			         .setAxisMaximumAsNumber( AxisIdentity.X_AXIS, number )
+			        //.setAxisDesiredTickmarks(AxisIdentity.X_AXIS, 3)
 			        .build();
 				   
 				    chartPanel = new HorizontalPanel();
