@@ -24,6 +24,8 @@ public class StoryUtil {
 	public static Date pvlast15DetailMapFetchAsc = new Date(0);
 	public static Date storyLastUpdatedMapFetchDesc = new Date(0);
 	public static Date storyLastUpdatedMapFetchAsc = new Date(0);
+	public static Date timeInAppMapFetchDesc = new Date(0);
+	public static Date timeInAppMapFetchAsc = new Date(0);
 	
 	public static Date getStoryDetailMapFetch(int sorttype)
 	{
@@ -68,6 +70,14 @@ public class StoryUtil {
 		else if (sorttype == 9)
 		{
 			storyDetailMapFetch = storyLastUpdatedMapFetchAsc;
+		}
+		else if (sorttype == 10)
+		{
+			storyDetailMapFetch = timeInAppMapFetchDesc;
+		}
+		else if (sorttype == 11)
+		{
+			storyDetailMapFetch = timeInAppMapFetchAsc;
 		}
 		return storyDetailMapFetch;
 	}
@@ -116,6 +126,14 @@ public class StoryUtil {
 		else if (sorttype == 9)
 		{
 			sortOrderString = "lastUpdatedDate asc";
+		}
+		else if (sorttype == 10)
+		{
+			sortOrderString = "timeInApp desc";
+		}
+		else if (sorttype == 11)
+		{
+			sortOrderString = "timeInApp asc";
 		}
 		return sortOrderString;
 	}

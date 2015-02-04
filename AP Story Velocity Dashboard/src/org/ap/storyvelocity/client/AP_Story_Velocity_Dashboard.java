@@ -1,10 +1,13 @@
 package org.ap.storyvelocity.client;
 
 import com.arcadiacharts.axis.AxisIdentity;
+import com.arcadiacharts.axis.AxisOrientation;
 import com.arcadiacharts.charts.ChartException;
 import com.arcadiacharts.charts.linechart.ACLineChart;
 import com.arcadiacharts.charts.linechart.ACLineChartBuilder;
+import com.arcadiacharts.model.axis.Axis;
 import com.arcadiacharts.model.axis.AxisType;
+import com.arcadiacharts.model.datatypes.DataModel;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ChangeEvent;
@@ -349,6 +352,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 							{
 								storyFlexTable.clear();
 								int x = pveslist.size();
+								sortFilterType = 10;
 								Cookies.setCookie("sortChartBoxIndex",  selectedIndex+"");
 								
 					 			Comparator<StoryDetailClient> timeInAppOrder =  new Comparator<StoryDetailClient>() {
@@ -464,6 +468,8 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 								int x = pveslist.size();
 								Cookies.setCookie("sortChartBoxIndex",  selectedIndex+"");
 								
+								sortFilterType = 11;
+								
 								// sort pv15 asc
 					 			Comparator<StoryDetailClient> timeInAppOrder =  new Comparator<StoryDetailClient>() {
 					 		        public int compare(StoryDetailClient s1, StoryDetailClient s2) {
@@ -542,7 +548,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 				    	int _initializeSelectedIndex = Integer.parseInt(initializeSelectedIndex);
 				    	//RBRB Window.alert("_initializeSelectedIndex = "+_initializeSelectedIndex);
 				    	
-				    	if (_initializeSelectedIndex >= 0 && _initializeSelectedIndex <= 9)
+				    	if (_initializeSelectedIndex >= 0 && _initializeSelectedIndex <= 11)
 				    	 sortChartBox.setSelectedIndex(_initializeSelectedIndex);
 				    	else
 				    	 sortChartBox.setSelectedIndex(0);  // velocity desc is the default.....
@@ -684,7 +690,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 			{
 				int _sortFilterType = Integer.parseInt(cookieSortFilter);
 				
-				if (_sortFilterType > 0 && _sortFilterType < 10)
+				if (_sortFilterType > 0 && _sortFilterType < 12)
 				{
 					sortFilterType = _sortFilterType;
 				}
@@ -859,11 +865,12 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		{
 			HorizontalPanel chartPanel = new HorizontalPanel();
 			
-			List pageViewSets = storyPageView.getPageviews();
+			//List pageViewSets = storyPageView.getPageviews();
 			String data = storyPageView.pageViewTrend;			 
 			String  myData = "Time in App, PageViews\n"+data;
-			
-			
+
+			//var myChart = new JSChart('chartid', 'line');
+
 			
 			ACLineChart chart;
 
@@ -872,12 +879,20 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 				    .setWidth(300)
 				    .setHeight(200)
 			        .setTitle("Story PageViews")
-			        .setData(myData)
 			        .setAxisType(AxisIdentity.X_AXIS, AxisType.LINEAR)
-			        .setAxisMinimumAsNumber( AxisIdentity.X_AXIS, number )
-			         .setAxisMaximumAsNumber( AxisIdentity.X_AXIS, number )
-			        //.setAxisDesiredTickmarks(AxisIdentity.X_AXIS, 3)
+			        .setCSVDataSeriesConfig("Time in App", DataModel.INTEGER, "#mins")
+			        .setAxisTickmarkFormattingPattern(AxisIdentity.X_AXIS, "#0")
+			        .setAxisNumberOfSubTicks(AxisIdentity.X_AXIS, 1)
+			        .setAxisCaption(AxisIdentity.X_AXIS, "<strong>mins</strong>")
+			        .setData(myData)
 			        .build();
+				   
+				     Axis dateAxis = chart.getPrimaryAxis( AxisOrientation.HORIZONTAL );
+				     //dateAxis.setMinimumAsNumber(0);
+				     
+				     //dateAxis.setMaximumAsNumber(1440);
+				     dateAxis.setDesiredTickmarks(24);
+				   
 				   
 				    chartPanel = new HorizontalPanel();
 				    chartPanel.add( chart );

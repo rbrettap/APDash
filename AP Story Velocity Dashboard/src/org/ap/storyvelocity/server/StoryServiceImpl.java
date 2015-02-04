@@ -22,6 +22,9 @@ import org.ap.storyvelocity.server.PMF;
 
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Key;
+import com.google.appengine.api.datastore.Query.Filter;
+import com.google.appengine.api.datastore.Query.FilterOperator;
+import com.google.appengine.api.datastore.Query.SortDirection;
 import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
@@ -185,66 +188,135 @@ StoryService {
 	public List<StoryDetailClient> getStoryDetailsInBulk(int numResults, int sorttype, long lastFetchedTime) {
 		
 		// first check to see if the lastFetchedTime is within the time interval....
-		String sortOrderString = "velocity desc";
-		sortOrderString = StoryUtil.getSortOrderString(sorttype);
+		 String sortOrderString = "velocity desc";
+		 sortOrderString = StoryUtil.getSortOrderString(sorttype);
 		 StoryUtil.storyDetailMapFetch =  StoryUtil.getStoryDetailMapFetch(sorttype);
 
 		
 		 PersistenceManager pm = PMF.get().getPersistenceManager();
 		 List<StoryDetailClient> sdclientlist = new ArrayList<StoryDetailClient>();
+		 sdclientlist.clear();
+		 
   	     String keyString = "";
   	     Date mappingDate = new Date(0);
+   	     Query q = null;
   	     
 			if (sorttype == 0)
 			{
 				keyString = "velocitydesc" + numResults;
 				mappingDate = StoryUtil.storyDetailMapFetch;
+				
+  	    	    q = pm.newQuery(StoryDetail.class, "active == 'Y'");
+	    	    q.setOrdering("velocity desc");  
+	    	    q.setRange(0, numResults);
 			}
 			else if (sorttype == 1)
 			{
 				keyString = "pubDatedesc" + numResults;
 				mappingDate = StoryUtil.pdstoryDetailMapFetchDesc;
+				
+  	    	    q = pm.newQuery(StoryDetail.class, "active == 'Y'");
+	    	    q.setOrdering("pubDate desc");  
+	    	    q.setRange(0, numResults);
+
 			}
 			else if (sorttype == 2)
 			{
 				keyString = "totalPageViewsdesc" + numResults;
 				mappingDate = StoryUtil.tpvstoryDetailMapFetchDesc;
+				
+  	    	    q = pm.newQuery(StoryDetail.class, "active == 'Y'");
+	    	    q.setOrdering("totalPageViews desc");
+	    	    q.setRange(0, numResults);
+
 			}
 			else if (sorttype == 3)
 			{
 				keyString = "velocityasc" + numResults;
 				mappingDate = StoryUtil.vstoryDetailMapFetchAsc;
+				
+  	    	    q = pm.newQuery(StoryDetail.class, "active == 'Y'");
+	    	    q.setOrdering("velocity asc");  
+	    	    q.setRange(0, numResults);
 			}
 			else if (sorttype == 4)
 			{
 				keyString = "pubDateasc" + numResults;
-				mappingDate = StoryUtil.pdstoryDetailMapFetchAsc;
+				mappingDate = StoryUtil.pdstoryDetailMapFetchAsc;				
+  	    	    q = pm.newQuery(StoryDetail.class, "active == 'Y'");
+	    	    q.setOrdering("pubDate  asc");  
+	    	    q.setRange(0, numResults);
 				
 			}
 			else if (sorttype == 5)
 			{
 				keyString = "totalPageViewsasc" + numResults;
-				mappingDate = StoryUtil.tpvstoryDetailMapFetchAsc;
+				mappingDate = StoryUtil.tpvstoryDetailMapFetchAsc;				
+  	    	    q = pm.newQuery(StoryDetail.class, "active == 'Y'");
+	    	    q.setOrdering("totalPageViews asc");  
+	    	    q.setRange(0, numResults);
 			}
 			else if (sorttype == 6)
 			{
 				keyString = "pvlast15desc" + numResults;
-				mappingDate = StoryUtil.pvlast15DetailMapFetchDesc;
+				//mappingDate = StoryUtil.pvlast15DetailMapFetchDesc;
+				// commented these out to always get latest results...
+				q = pm.newQuery(StoryDetail.class, "active == 'Y'");
+  	    	    q.setOrdering("lastUpdatedDate desc"); 
+  	    	    //q.setOrdering("trendfifteenmins desc")  // not necessary since we are doing this 
+  	    	    // sort on the client side.;
+  	    	    q.setFilter("active == 'Y'");
+	    	    q.setRange(0, numResults*2);
+
 			}
 			else if (sorttype == 7)
 			{
 				keyString = "pvlast15asc" + numResults;
-				mappingDate = StoryUtil.pvlast15DetailMapFetchAsc;
+				//mappingDate = StoryUtil.pvlast15DetailMapFetchAsc;
+				// commented these out to always get latest results...
+  	    	    q = pm.newQuery(StoryDetail.class, "active == 'Y'");
+  	    	    q.setOrdering("lastUpdatedDate desc"); 
+	    	    //q.setOrdering("trendfifteenmins asc");
+	    	    q.setRange(0, numResults*2);
+
 			}
 			else if (sorttype == 8)
 			{
 				keyString = "lastupdateddesc" + numResults;
 				mappingDate = StoryUtil.storyLastUpdatedMapFetchDesc;
+				
+  	    	    q = pm.newQuery(StoryDetail.class, "active == 'Y'");
+	    	    q.setOrdering("lastUpdatedDate desc");  
+	    	    q.setRange(0, numResults);
+
 			}
 			else if (sorttype == 9)
 			{
 				keyString = "lastupdatedasc" + numResults;
 				mappingDate = StoryUtil.storyLastUpdatedMapFetchAsc;
+				
+  	    	    q = pm.newQuery(StoryDetail.class, "active == 'Y'");
+	    	    q.setOrdering("lastUpdatedDate asc");  
+	    	    q.setRange(0, numResults);
+
+			}
+			else if (sorttype == 10)
+			{
+				keyString = "timeinappdesc" + numResults;
+				//mappingDate = StoryUtil.timeInAppMapFetchDesc;
+				
+  	    	    q = pm.newQuery(StoryDetail.class, "active == 'Y'");
+  	    	    q.setOrdering("pubDate desc"); 
+	    	    q.setRange(0, numResults);
+
+			}
+			else if (sorttype == 11)
+			{
+				keyString = "timeinappasc" + numResults;
+				//mappingDate = StoryUtil.timeInAppMapFetchAsc;
+  	    	    q = pm.newQuery(StoryDetail.class, "active == 'Y'");
+  	    	    q.setOrdering("pubDate asc"); 
+	    	    q.setRange(0, numResults);
 			}
   	     
 
@@ -253,19 +325,21 @@ StoryService {
 	    	  //Key key = KeyFactory.createKey(StoryDetail.class.getSimpleName(), storyId);
 			  //org.ap.storyvelocity.server.StoryDetail e = pm.getObjectById(org.ap.storyvelocity.server.StoryDetail.class, key);
 	    	  List<StoryDetail> results = null;
-
+	    	  
 	    	  // storymap must contain the cache results or 
 	    	  // had the cache results and be older than 2 minutes....
 	    	  
 	    	  if (!StoryUtil.filteredStoryDetailMap.containsKey(keyString) || 
-	    			  ( StoryUtil.filteredStoryDetailMap.containsKey(keyString) && !StoryUtil.isDateYounger(mappingDate, 2)))
+	    			  ( StoryUtil.filteredStoryDetailMap.containsKey(keyString) && !StoryUtil.isDateYounger(mappingDate, 1)))
 	    	  {
 	    			// do the query here because the map is empty....
-	  	    	    Query q = pm.newQuery(StoryDetail.class, "active == 'Y'");
-	  	    	    //q.declareParameters("String activeFlagParam");
-		    	    q.setOrdering(sortOrderString);
-		    	    q.setRange(0, numResults);
 		    	    results = (List<StoryDetail>) q.execute();
+		    	   
+		    	    if (results.size() > numResults)
+		    	    {
+		    	    	results = results.subList(0, numResults);
+		    	    }
+
 	    		  
 	    			if (sorttype == 0)
 	    			{
@@ -345,6 +419,22 @@ StoryService {
 	    				
 	    				 StoryUtil.filteredStoryDetailMap.put(keyString, results);
 	    				 StoryUtil.storyLastUpdatedMapFetchAsc = new Date();
+	    			}
+	    			else if (sorttype == 10)
+	    			{
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey(keyString))
+	    					 StoryUtil.filteredStoryDetailMap.remove(keyString);
+	    				
+	    				 StoryUtil.filteredStoryDetailMap.put(keyString, results);
+	    				 StoryUtil.timeInAppMapFetchDesc = new Date();
+	    			}
+	    			else if (sorttype == 11)
+	    			{
+	    				if ( StoryUtil.filteredStoryDetailMap.containsKey(keyString))
+	    					 StoryUtil.filteredStoryDetailMap.remove(keyString);
+	    				
+	    				 StoryUtil.filteredStoryDetailMap.put(keyString, results);
+	    				 StoryUtil.timeInAppMapFetchAsc = new Date();
 	    			}
 	    	  }
 	    	  else
@@ -443,7 +533,7 @@ StoryService {
 				 }
 
 				
-				totalPageViews += pv.getPageviews();
+				totalPageViews = totalPageViews + pv.getPageviews();
 				
 				int timeRelativeToPubDate = (int)StoryUtil.getTimeInAppRelativeToPageViewTime(pubDate, pv.getPageViewDate());
 				sb.append(timeRelativeToPubDate+",");	   						
@@ -480,7 +570,7 @@ StoryService {
 				
 				// is pageView in the last 15 minutes.....
 				if (StoryUtil.isDateYounger(pv.getPageViewDate(), 15))
-						totalPageViewsLast15 += pv.getPageviews();
+						totalPageViewsLast15 = totalPageViewsLast15 + pv.getPageviews();
 				
 				// set the last updated date to the last pageViewDate....
 				lastUpdatedDate = pv.getPageViewDate();		
@@ -771,12 +861,12 @@ StoryService {
 						   }
 					  }
 					  
-					  totalPageViews += pvi.getPageviews();
+					  totalPageViews = totalPageViews + pvi.getPageviews();
 					  
 					  // look at the pageviewDate to see whether it's within the last 15...
 					  if (StoryUtil.isDateYounger(pv.getPageViewDate(), 15))
 					  {
-						  trendfifteenmins += pvi.getPageviews();
+						  trendfifteenmins = trendfifteenmins + pvi.getPageviews();
 					  }
 					  
 				   }
