@@ -15,8 +15,6 @@ public interface StoryServiceAsync {
 	  public void addStoryDetails(String[] storyNames, AsyncCallback<Void> async);
 	  public void removeStory(String storyName, AsyncCallback<Void> async);
 	  public void getStories(AsyncCallback<List<StoryDetailClient>> async);
-	  public void getStoryDetails(String storyId, AsyncCallback<StoryDetailClient> async);
-	  
 	  public void getStoryDetailsInBulk(int numResults, int sorttype, long lastFetchedTime, AsyncCallback<List<StoryDetailClient>> async);
 	  public void getUpdatedStoryDetailsInBulk(String[] storyNames, long lastFetchedTime, AsyncCallback<List<StoryDetailClient>> async);	
 

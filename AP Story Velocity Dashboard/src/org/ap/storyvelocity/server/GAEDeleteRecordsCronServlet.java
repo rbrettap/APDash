@@ -18,6 +18,7 @@ try {
 	_logger.info("Cron has been executed");
 	 StoryServiceImpl serverImpl = new StoryServiceImpl();
 	 serverImpl.removeRecordsFromServer();
+	 serverImpl.removeStoryIngestionRecords();
 
  }
  catch (Exception ex) {

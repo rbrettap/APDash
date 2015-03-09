@@ -703,20 +703,6 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		}
 		
 		
-		private void checkForUpdatedStories() {
-			
-			Date firstFetchTime = new Date();
-			// initial sort type should be by velocity
-			if (refreshInProgress == true)
-				return;
-			
-			// todo 
-			// fix later rbrb
-			//getUpdatedStoryDetailsInBulk(storyNames, lastFetchedTime);	
-			
-			//getStoryDetailsByBulk(numStoryCount, sortFilterType, firstFetchTime.getTime());
-		}
-		
 		
 		/*
 		private void refreshWatchList() {
@@ -905,55 +891,7 @@ public class AP_Story_Velocity_Dashboard implements EntryPoint {
 		}
 		
 
-		private void addDefaultStories(final String storyId) {
-
-		    // add the stock to the list
-		    int row = storyFlexTable.getRowCount();
-		    stories.add(storyId);
-		    storyFlexTable.setText(row, 0, storyId);
-		    storyFlexTable.setWidget(row, 2, new Label());
-		    storyFlexTable.getCellFormatter().addStyleName(row, 1, "watchListNumericColumn");
-		    storyFlexTable.getCellFormatter().addStyleName(row, 2, "watchListNumericColumn");
-		    storyFlexTable.getCellFormatter().addStyleName(row, 3, "watchListNumericColumn");
-		    storyFlexTable.getCellFormatter().addStyleName(row, 4, "watchListNumericColumn");
-		    storyFlexTable.getCellFormatter().addStyleName(row, 5, "watchListNumericColumn");
-		    storyFlexTable.getCellFormatter().addStyleName(row, 6, "watchListNumericColumn");
-		   /* storyFlexTable.getCellFormatter().addStyleName(row, 7, "watchListRemoveColumn");
-		    
-		    // add button to remove this stock from the list
-		    Button removeStock = new Button("x");
-		    removeStock.addStyleDependentName("remove");
-		    removeStock.addClickHandler(new ClickHandler() {
-		    public void onClick(ClickEvent event) {					
-		        int removedIndex = stories.indexOf(storyId);
-		        stories.remove(removedIndex);
-		        storyFlexTable.removeRow(removedIndex + 1);
-		    }
-		    });
-		    storyFlexTable.setWidget(row, 7, removeStock);	
-		    */
-		    
-		    // now we need to retrieve the story record from the database....
-		    getStoryDetails(storyId);
-		}
 		
-		private void getStoryDetails(final String storyId) {
-			
-			  storyService.getStoryDetails(storyId, new AsyncCallback<StoryDetailClient>() {
-		      public void onFailure(Throwable error) {
-		    	  
-		      }
-		      public void onSuccess(StoryDetailClient storyDetail) {
-		        
-					StoryDetailClient[] pVes = new StoryDetailClient[1];
-					
-					pVes[0] = storyDetail;
-					updateTable(pVes);
-		      }
-		    });
-	}
-	
-
 	// the main function to populate the grid table in bulk (10 items)
     // from the database....
 	private void getStoryDetailsByBulk(final int numResults, final int sorttype, final long lastFetchedTime) {
